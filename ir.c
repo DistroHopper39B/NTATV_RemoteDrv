@@ -83,7 +83,7 @@ void process_signal(apple_ir_command *ir, int len)
     if (debug)
     {
         printf("Raw signal: ");
-        dumphex((uint8_t *) &ir, len);
+        dumphex((uint8_t *) ir, len);
     }
     
     if (ir->flags == APPLE_REMOTE_REPEAT)

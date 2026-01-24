@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
 	int opt;
 	
 	apple_ir_command	ir_command;
+	apple_ir_command	flush_cmd;
 		
 	status = libusb_init(NULL);
     if (status < 0)
@@ -174,20 +175,45 @@ int main(int argc, char *argv[])
 	}
 	
 	version();
+	
+	// flush libusb cache
+	int flush_len = sizeof(flush_cmd);
+							
+	do
+	{
+		dprintf("flushing, ");
+		status = libusb_bulk_transfer(remote_handle,
+							APPLE_REMOTE_ENDPOINT,
+							(uint8_t *) &flush_cmd,
+							sizeof(flush_cmd),
+							&flush_len,
+							10);
+		dprintf("status = %d\n", status);
+	} while (status == LIBUSB_SUCCESS);
+	
+	// do one more flush, this seems to fix things all of the time.
+	status = libusb_bulk_transfer(remote_handle,
+							APPLE_REMOTE_ENDPOINT,
+							(uint8_t *) &flush_cmd,
+							sizeof(flush_cmd),
+							&flush_len,
+							10);
+	
+							
 	error("\nEntering remote test mode...\n");
 	error("Press a button on your Apple remote to see the status or press Control-C to quit.\n");
 	
 	while (1)
 	{
 		int length = sizeof(ir_command);
-		int result = libusb_bulk_transfer(remote_handle,
-										APPLE_REMOTE_ENDPOINT,
-										(uint8_t *) &ir_command,
-										sizeof(ir_command),
-										&length,
-										0);
+		status = libusb_bulk_transfer(remote_handle,
+									APPLE_REMOTE_ENDPOINT,
+									(uint8_t *) &ir_command,
+									sizeof(ir_command),
+									&length,
+									0);
 		
-		if (result == LIBUSB_SUCCESS)
+		if (status == LIBUSB_SUCCESS)
 		{
 			process_signal(&ir_command, length);
 		}

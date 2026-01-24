@@ -4,6 +4,18 @@
  * SPDX-License-Identifier: GPL-2.0-only
  */
  
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <sys/time.h>
+
+#include "libusb.h"
+ 
 #define VENDOR_APPLE 0x05ac
 #define PRODUCT_APPLETV_REMOTE 0x8241
 
@@ -11,6 +23,14 @@
                              ((dev->descriptor.idProduct == PRODUCT_APPLETV_REMOTE)))
 
 
+							 
+							 
+typedef enum
+{
+    success = 0,
+    no_remote,
+} error_codes;
+                             
 typedef enum
 {
     LEDMODE_OFF,
@@ -22,16 +42,6 @@ typedef enum
     LEDMODE_MAX
 } led_modes;
 
-const char *led_modes_str[LEDMODE_MAX] =
-{
-    "Off",
-    "Amber",
-    "Amber (blinking) (default)",
-    "White",
-    "White (blinking)",
-    "Both blinking",
-};
-
 typedef enum
 {
     LED_BRIGHTNESS_LO,
@@ -39,25 +49,65 @@ typedef enum
     LED_BRIGHTNESS_MAX
 } led_brightnesses;
 
-struct ir_command {
-    unsigned char flags;
-    unsigned char unused;
-    unsigned char event;
-    unsigned char address;
-    unsigned char eventId;
-};
+typedef enum
+{
+	APPLE_REMOTE_PRESS		= 0x25,
+	APPLE_REMOTE_REPEAT		= 0x26,
+} apple_ir_flags;
 
-#define BUTTON_TIMEOUT 150
-#define HOLD_TIMEOUT   500
+typedef enum 
+{
+	APPLE_REMOTE_BUTTON		= 0xEE,
+	APPLE_REMOTE_PAIRING	= 0xE0,
+} apple_ir_events;
 
 
-#define EVENT_UP 1
-#define EVENT_DOWN 2
-#define EVENT_LEFT 3
-#define EVENT_RIGHT 4
-#define EVENT_PLAY 5
-#define EVENT_MENU 6
-#define EVENT_HOLD_PLAY 7
-#define EVENT_HOLD_MENU 8
+typedef enum
+{
+	APPLE_REMOTE_TIMEOUT	= 0x00,
+	APPLE_REMOTE_RESVD		= 0x01,
+	APPLE_REMOTE_MENU1		= 0x02,
+	APPLE_REMOTE_MENU2		= 0x03,
+	APPLE_REMOTE_PLAY1		= 0x04,
+	APPLE_REMOTE_PLAY2		= 0x05,
+	APPLE_REMOTE_RIGHT1		= 0x06,
+	APPLE_REMOTE_RIGHT2		= 0x07,
+	APPLE_REMOTE_LEFT1		= 0x08,
+	APPLE_REMOTE_LEFT2		= 0x09,
+	APPLE_REMOTE_UP1		= 0x0A,
+	APPLE_REMOTE_UP2		= 0x0B,
+	APPLE_REMOTE_DOWN1		= 0x0C,
+	APPLE_REMOTE_DOWN2		= 0x0D,
+} apple_ir_eventids_general;
 
-#define EVENT_RELEASE 0x80
+typedef enum
+{
+	APPLE_REMOTE_PAIR1		= 0x02,
+	APPLE_REMOTE_PAIR2		= 0x03,
+	APPLE_REMOTE_UNPAIR1	= 0x04,
+	APPLE_REMOTE_UNPAIR2	= 0x05,
+} apple_ir_eventids_pairing;
+
+typedef struct
+{
+	uint8_t flags;
+	uint8_t unused;
+	uint8_t event;
+	uint8_t addr;
+	uint8_t event_id;
+} apple_ir_command;
+
+#define APPLE_REMOTE_ENDPOINT 0x82
+
+extern bool debug;
+extern int led_brightness;
+extern int led_mode;
+
+#define dprintf(fmt, ...) if (debug) printf(fmt, ##__VA_ARGS__)
+
+#define error(fmt, ...) fprintf(stderr, fmt, ##__VA_ARGS__)
+
+void set_led(libusb_device_handle *handle, int mode);
+void set_led_brightness(libusb_device_handle *handle, int high);
+void run_led_test(libusb_device_handle *remote_handle);
+void process_signal(apple_ir_command *ir, int len);

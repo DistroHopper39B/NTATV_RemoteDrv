@@ -4,208 +4,32 @@
  * SPDX-License-Identifier: GPL-2.0-only
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <getopt.h>
-#include <sys/time.h>
-
-#include "libusb/lusb0_usb.h"
 #include "remote.h"
 
-bool debug = false;
+#ifdef __linux__
+#error "This program is designed for Windows. Please use atvclient on Linux."
+#endif
 
-#define dprintf(fmt, ...) if (debug) printf(fmt, ##__VA_ARGS__)
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 0
 #define VERSION_PATCH 1
 
-static usb_dev_handle *find_ir(void)
+bool debug = false;
+
+// defaults on startup
+int led_brightness 					= LED_BRIGHTNESS_HI;
+int led_mode						= LEDMODE_AMBER_BLINK;
+
+static const char *led_modes_str[LEDMODE_MAX] =
 {
-	struct usb_bus *bus;
-	struct usb_device *dev;
-
-	for (bus = usb_busses; bus; bus = bus->next) {
-		for (dev = bus->devices; dev; dev = dev->next)
-			if (dev->descriptor.idVendor == VENDOR_APPLE)
-			    if(IS_APPLE_REMOTE(dev))
- 				return usb_open(dev);
-	}
-
-	return NULL;
-}
-
-static usb_dev_handle *get_ir(void)
-{
-	static usb_dev_handle *ir = NULL;
-
-	if (!ir) {
-		usb_init();
-		usb_find_busses();
-		usb_find_devices();
-        
-		ir = find_ir();
-		if (!ir) {
-			fprintf(stderr, "IR receiver not found, quitting\n");
-			exit(1);
-		}
-        
-        usb_set_configuration(ir, 1);
-        int ret = usb_claim_interface(ir, 1);
-		if (ret) {
-			fprintf(stderr, "error claiming interface (%d): %s\n", ret, usb_strerror());
-			exit(2);
-		}
-		//usb_reset(ir);
-		//
-	}
-
-	return ir;
-}
-
-static int set_report(unsigned char* data, int len)
-{
-	unsigned char *type = data;
-	int val;
-
-	val = 0x300 | *type;
-
-	return (usb_control_msg(get_ir(), USB_ENDPOINT_OUT | USB_TYPE_CLASS
-				| USB_RECIP_INTERFACE, 9, val, 0,
-				(char*) data, len, 1000) != len);
-}
-
-static void set_led_brightness(int high)
-{
-	unsigned char buf[5];
-
-	memset(buf, 0, sizeof(buf));
-	buf[0] = 0xd;
-
-	if (high) {
-		buf[1] = 6;
-		set_report(buf, sizeof(buf));
-		buf[1] = 5; buf[2] = 1;
-		set_report(buf, 3);
-	} else {
-		buf[1] = 5;
-		set_report(buf, sizeof(buf));
-		set_report(buf, 3);
-	}
-}
-
-static void set_led(int mode)
-{
-	unsigned char buf[5];
-
-	memset(buf, 0, sizeof(buf));
-	buf[0] = 0xd; buf[1] = mode;
-
-	switch (mode) {
-	case LEDMODE_OFF:
-		set_report(buf, sizeof(buf));
-		buf[1] = 3;
-		set_report(buf, 3);
-		buf[1] = 4;
-		set_report(buf, 3);
-		break;
-
-	case LEDMODE_AMBER:
-		set_report(buf, sizeof(buf));
-		buf[1] = 3; buf[2] = 1;
-		set_report(buf, 3);
-		buf[1] = 4; buf[2] = 0;
-		set_report(buf, 3);
-		break;
-
-	case LEDMODE_AMBER_BLINK:
-		set_report(buf, sizeof(buf));
-		buf[1] = 3;
-		set_report(buf, 3);
-		buf[1] = 4;
-		set_report(buf, 3);
-		buf[1] = 3; buf[2] = 2;
-		set_report(buf, 3);
-		break;
-
-	case LEDMODE_WHITE:
-		set_report(buf, sizeof(buf));
-		set_report(buf, 3);
-		buf[1] = 4; buf[2] = 1;
-		set_report(buf, 3);
-		break;
-
-	case LEDMODE_WHITE_BLINK:
-		set_report(buf, sizeof(buf));
-		buf[1] = 3;
-		set_report(buf, 3);
-		buf[1] = 4;
-		set_report(buf, 3);
-		buf[1] = 4; buf[2] = 2;
-		set_report(buf, 3);
-		break;
-
-	case LEDMODE_BOTH:
-		buf[1] = 7;
-		set_report(buf, sizeof(buf));
-		buf[1] = 6; buf[2] = 1;
-		set_report(buf, 3);
-		break;
-	}
-}
-
-void dumphex(unsigned char* buf, int size)
-{
-	int i;
-	for(i=0; i < size; i++) {
-	  printf("%02x ", buf[i]);
-	}
-	printf("\n");
-}
-  
-void print_button(int button) {
-	printf("Remote button press detected: ");
-	switch (button) {
-	  	case EVENT_UP: printf("Up\n"); break;
-	  	case EVENT_DOWN: printf("Down\n"); break;
-	  	case EVENT_LEFT: printf("Left\n"); break;
-	  	case EVENT_RIGHT: printf("Right\n"); break;
-	  	case EVENT_MENU: printf("Menu\n"); break;
-	  	case EVENT_PLAY: printf("Play/pause\n"); break;
-	}
-}
-  
-
-void handle_button(struct ir_command command) {	
-	switch(command.eventId)
-	{
-	  	case 0x0a: case 0x0b:
-			print_button(EVENT_UP);
-			break;
-	  	case 0x0c: case 0x0d:
-			print_button(EVENT_DOWN);
-			break;
-	  	case 0x09: case 0x08:
-			print_button(EVENT_LEFT);
-			break;
-	  	case 0x06: case 0x07:
-			print_button(EVENT_RIGHT);
-			break;
-		case 0x03: case 0x02:
-			print_button(EVENT_MENU);
-			break;
-		case 0x05: case 0x04:
-			print_button(EVENT_PLAY);
-			break;
-	  	case 0x00:
-			printf("Timed out\n");
-			break;
-	  	default: printf("unknown\n");
-	}
-}
+    "Off",
+    "Amber",
+    "Amber (blinking) (default)",
+    "White",
+    "White (blinking)",
+    "Both blinking",
+};
 
 static const struct option long_options[] = 
 {
@@ -219,85 +43,80 @@ static const struct option long_options[] =
 
 static void version(void)
 {
-	printf("Apple TV Remote Driver for Windows NT version %d.%d.%d\n",
+	error("Apple TV Remote Driver for Windows NT version %d.%d.%d\n",
 		VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
-	printf("This program is part of NTATV (https://github.com/DistroHopper39B/NTATV)\n");
+	error("This program is part of NTATV (https://github.com/DistroHopper39B/NTATV)\n");
 }
 
 static void help(void)
 {
 	version();
-	printf("\n");
+	error("\n");
 	
-	printf("The following options are available:\n");
-	printf("-h, --help \t\tShow this help screen.\n");
-	printf("-v, --version \t\tShow version number.\n");
-	printf("-d, --debug \t\tEnable verbose output.\n");
-	printf("-m, --led-mode \t\tChange the front LED's mode of operation.\n");
-	printf("Supported LED modes:\n");
+	error("The following options are available:\n");
+	error("-h, --help \t\tShow this help screen.\n");
+	error("-v, --version \t\tShow version number.\n");
+	error("-d, --debug \t\tEnable verbose output.\n");
+	error("-m, --led-mode \t\tChange the front LED's mode of operation.\n");
+	error("Supported LED modes:\n");
 	for (int i = 0; i < LEDMODE_MAX; i++)
 	{
-		printf("    %i: %s\n", i, led_modes_str[i]);
+		error("    %i: %s\n", i, led_modes_str[i]);
 	}
-	printf("-t, --led-test \t\tTest all LED modes.\n");
-	printf("-b, --led-brightness \tChange the brightness of the front LED.\n");
-	printf("Supported LED brightnesses:\n");
-	printf("    0: Dim\n");
-	printf("    1: Bright (default)\n");
-	
-}
-
-
-
-
-
-static void run_led_test(void)
-{
-	set_led_brightness(LED_BRIGHTNESS_HI);
-	dprintf("Running LED test with high brightness.\n");
-	
-	for (int i = 0; i < LEDMODE_MAX; i++)
-    {
-        dprintf("Setting LED to mode %d (%s)...\n", i, led_modes_str[i]);
-        set_led(i);
-        sleep(2);
-    }
-	
-	set_led_brightness(LED_BRIGHTNESS_LO);
-	dprintf("Running LED test with low brightness.\n");
-	
-	for (int i = 0; i < LEDMODE_MAX; i++)
-    {
-        dprintf("Setting LED to mode %d (%s)...\n", i, led_modes_str[i]);
-        set_led(i);
-        sleep(2);
-    }
-	
-	dprintf("Going back to defaults.\n");
-	set_led(LEDMODE_AMBER_BLINK);
-	set_led_brightness(LED_BRIGHTNESS_HI);
+	error("-t, --led-test \t\tTest all LED modes.\n");
+	error("-b, --led-brightness \tChange the brightness of the front LED.\n");
+	error("Supported LED brightnesses:\n");
+	error("    0: Dim\n");
+	error("    1: Bright (default)\n");
 }
 
 int main(int argc, char *argv[])
 {
-	struct ir_command command;
-	struct ir_command timeoutCommand;
-	
-	int keydown = 0;
-	
+    int status 							= success;
+    libusb_device_handle *remote_handle = NULL;
 	int opt;
 	
-	// Default at startup.
-	int led_brightness = LED_BRIGHTNESS_HI;
-	int led_mode = LEDMODE_AMBER_BLINK;
+	apple_ir_command	ir_command;
+		
+	status = libusb_init(NULL);
+    if (status < 0)
+    {
+        error("FATAL ERROR: libusb failed to start! (%d)\n", status);
+        return status;
+    }
+    
+    // Check to see if the device exists
+    remote_handle = libusb_open_device_with_vid_pid(NULL,
+        VENDOR_APPLE,
+        PRODUCT_APPLETV_REMOTE);
+    if (!remote_handle)
+    {
+        error("No remote found!\n");
+        status = no_remote;
+        goto done;
+    }
+    	
+	status = libusb_claim_interface(remote_handle, 0);
+    if (status)
+    {
+        error("Cannot claim interface 0: Errno %d (%s)", status, libusb_strerror(status));
+        goto done;
+    }
+	
+	status = libusb_claim_interface(remote_handle, 1);
+    if (status)
+    {
+        error("Cannot claim interface 1: Errno %d (%s)", status, libusb_strerror(status));
+        goto done;
+    }
 	
 	while ((opt = getopt_long(argc, argv, "hvdm:tb:", long_options, NULL)) != -1)
 	{
-		// this is bad and will be rewritten later. (top 10 lies)
 		switch (opt)
 		{
 			// we do this one first to ensure debug output ASAP
 			case 'd':
+				libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
 				debug = true;
 				break;
 			case 'h':
@@ -315,13 +134,13 @@ int main(int argc, char *argv[])
 				led_mode = strtol(optarg, NULL, 0);
 				if (led_mode < 0 || led_mode > LEDMODE_BOTH)
 				{
-					printf("Invalid LED mode!\n");
+					error("Invalid LED mode!\n");
 					exit(1);
 				}
 				
 				dprintf("LED mode will be set to %d (%s)\n", led_mode, led_modes_str[led_mode]);
 				
-				set_led(led_mode);
+				set_led(remote_handle, led_mode);
 				printf("Successfully set LED mode to %d (%s)\n", led_mode, led_modes_str[led_mode]);
 				
 				exit(0);
@@ -335,18 +154,17 @@ int main(int argc, char *argv[])
 				if (led_brightness != LED_BRIGHTNESS_HI
 					&& led_brightness != LED_BRIGHTNESS_LO)
 				{
-					printf("Brightness must be 0 or 1!\n");
+					error("Brightness must be 0 or 1!\n");
 					exit(1);
 				}
 				
-				set_led_brightness(led_brightness);
-				printf("Successfully set LED brightness to %d\n", led_brightness);
+				set_led_brightness(remote_handle, led_brightness);
+				error("Successfully set LED brightness to %d\n", led_brightness);
 				exit(0);
 			}
 			case 't':
 			{
-				debug = true;
-				run_led_test();
+				run_led_test(remote_handle);
 				exit(0);
 			}
 			default:
@@ -355,60 +173,35 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	set_led_brightness(LED_BRIGHTNESS_HI);
-	set_led(LEDMODE_WHITE);
-	
-	// Actual remote implementation.
 	version();
-	printf("\nEntering remote test mode...\n");
-	printf("Press a button on your Apple Remote or press Control-C to quit.\n");
-	
-	memset(&timeoutCommand, 0, sizeof(timeoutCommand));
-
+	error("\nEntering remote test mode...\n");
+	error("Press a button on your Apple remote to see the status or press Control-C to quit.\n");
 	
 	while (1)
 	{
-		int result = usb_interrupt_read(get_ir(), 0x82, (char*) &command, sizeof(command), keydown ? BUTTON_TIMEOUT : 0);  
-		if(result > 0)
+		int length = sizeof(ir_command);
+		int result = libusb_bulk_transfer(remote_handle,
+										APPLE_REMOTE_ENDPOINT,
+										(uint8_t *) &ir_command,
+										sizeof(ir_command),
+										&length,
+										0);
+		
+		if (result == LIBUSB_SUCCESS)
 		{
-			// we have an IR code!
-			if (debug) dumphex((unsigned char*) &command, result);
-			
-			if (command.flags == 0x26) {
-				// set
-				command.event = 0xee;
-			}
-	
-			switch(command.event)
-			{
-				case 0xee:
-				case 0xe5: 
-				  	handle_button(command);
-				  	break;
-				case 0xe0:
-					// pairing??
-				  	set_led(LEDMODE_AMBER);
-					printf("You tried to pair your remote, this doesn't do anything\n");
-				  	break;
-				default:
-				  	if(debug) printf("Unknown event %x\n", command.event);
-			}
-			keydown = 1;
-			
-		} else if (result == -110)
-		{
-		  	// timeout, reset led
-		  	keydown = 0;                        
-		  	set_led(LEDMODE_WHITE);
-		  	handle_button(timeoutCommand);
-		}
-		else
-		{
-		  	// something else
-		  	keydown = 0;
-		  	if (debug) printf("Got nuffing: %s\n", usb_strerror());
+			process_signal(&ir_command, length);
 		}
 	}
+	    
+    done:
+    if (remote_handle)
+    {
+		libusb_release_interface(remote_handle, 0);
+        libusb_release_interface(remote_handle, 1);
+        libusb_close(remote_handle);
+    }
 	
-	return 0;
+    libusb_exit(NULL);
+	
+    return status;
 }

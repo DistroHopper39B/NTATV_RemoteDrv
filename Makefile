@@ -4,13 +4,13 @@ CC = i686-w64-mingw32-gcc
 CFLAGS = -Wall
 
 TARGET = remote.exe
-OBJECTS = remote.o
+OBJECTS = remote.o ir.o led.o libusb-1.0.a
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -Ilibusb -L. -llibusb0 -o $@
+	$(CC) $(OBJECTS) -o $@
 
 clean:
 	rm -f *.o $(TARGET)

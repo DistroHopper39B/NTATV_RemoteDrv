@@ -49,18 +49,44 @@ typedef enum
     LED_BRIGHTNESS_MAX
 } led_brightnesses;
 
+// IR Remote
+
+typedef enum
+{
+	REMOTE_VENDOR_APPLE 	= 0x87,
+	REMOTE_VENDOR_6B		= 0x6B, // Unknown vendor (0x6B)
+	REMOTE_VENDOR_FE		= 0xFE, // Unknown vendor (0xFE)
+} ir_vendors;
+
+typedef struct
+{
+	uint8_t dat00;
+	uint8_t vendor;
+	uint8_t dat02;
+	uint8_t dat03;
+	uint8_t dat04;
+} ir_command;
+
+typedef struct
+{
+	uint8_t flags;
+	uint8_t vendor;
+	uint8_t event;
+	uint8_t addr;
+	uint8_t event_id;
+} ir_command_vendor_apple;
+
 typedef enum
 {
 	APPLE_REMOTE_PRESS		= 0x25,
 	APPLE_REMOTE_REPEAT		= 0x26,
-} apple_ir_flags;
+} ir_flags_apple;
 
 typedef enum 
 {
 	APPLE_REMOTE_BUTTON		= 0xEE,
 	APPLE_REMOTE_PAIRING	= 0xE0,
-} apple_ir_events;
-
+} ir_events_apple;
 
 typedef enum
 {
@@ -78,7 +104,7 @@ typedef enum
 	APPLE_REMOTE_UP2		= 0x0B,
 	APPLE_REMOTE_DOWN1		= 0x0C,
 	APPLE_REMOTE_DOWN2		= 0x0D,
-} apple_ir_eventids_general;
+} ir_eventids_general_apple;
 
 typedef enum
 {
@@ -86,16 +112,26 @@ typedef enum
 	APPLE_REMOTE_PAIR2		= 0x03,
 	APPLE_REMOTE_UNPAIR1	= 0x04,
 	APPLE_REMOTE_UNPAIR2	= 0x05,
-} apple_ir_eventids_pairing;
+} ir_eventids_pairing_apple;
 
 typedef struct
 {
-	uint8_t flags;
-	uint8_t unused;
-	uint8_t event;
-	uint8_t addr;
-	uint8_t event_id;
-} apple_ir_command;
+	uint8_t __unknown1; // Always 0x26
+	uint8_t vendor;
+	uint8_t __unknown2; // Always 0x86
+	uint8_t __unknown3; // Changes depending on button
+	uint8_t button;
+} ir_command_vendor_6b;
+
+typedef enum
+{
+	VEN6B_REMOTE_LEFT		= 0x04,
+	VEN6B_REMOTE_CENTER		= 0x05,
+	VEN6B_REMOTE_RIGHT		= 0x06,
+	VEN6B_REMOTE_POWER		= 0x12,
+	VEN6B_REMOTE_DOWN		= 0x1a,
+	VEN6B_REMOTE_UP			= 0x1b,
+} ir_buttons_vendor_6b;
 
 #define APPLE_REMOTE_ENDPOINT 0x82
 
@@ -110,4 +146,4 @@ extern int led_mode;
 void set_led(libusb_device_handle *handle, int mode);
 void set_led_brightness(libusb_device_handle *handle, int high);
 void run_led_test(libusb_device_handle *remote_handle);
-void process_signal(apple_ir_command *ir, int len);
+void process_signal(ir_command *ir, int len);

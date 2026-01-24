@@ -76,8 +76,8 @@ int main(int argc, char *argv[])
     libusb_device_handle *remote_handle = NULL;
 	int opt;
 	
-	apple_ir_command	ir_command;
-	apple_ir_command	flush_cmd;
+	ir_command	gen_ir_command;
+	ir_command	flush_cmd;
 		
 	status = libusb_init(NULL);
     if (status < 0)
@@ -208,14 +208,14 @@ int main(int argc, char *argv[])
 		int length = sizeof(ir_command);
 		status = libusb_bulk_transfer(remote_handle,
 									APPLE_REMOTE_ENDPOINT,
-									(uint8_t *) &ir_command,
+									(uint8_t *) &gen_ir_command,
 									sizeof(ir_command),
 									&length,
 									0);
 		
 		if (status == LIBUSB_SUCCESS)
 		{
-			process_signal(&ir_command, length);
+			process_signal(&gen_ir_command, length);
 		}
 	}
 	    

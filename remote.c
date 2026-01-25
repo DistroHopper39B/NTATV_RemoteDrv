@@ -70,6 +70,49 @@ static void help(void)
 	error("    1: Bright (default)\n");
 }
 
+int handle_led_mode(libusb_device_handle *remote, char *arg)
+{
+	if (strlen(arg) != 1)
+	{
+		return EINVAL;
+	}
+
+	if (!isdigit(arg[0]))
+	{
+		return EINVAL;
+	}
+
+	led_mode = strtol(arg, NULL, 0);
+	if (led_mode < LEDMODE_OFF || led_mode > LEDMODE_BOTH)
+	{
+		return EINVAL;
+	}
+	set_led(remote, led_mode);
+	return 0;
+}
+
+int handle_led_brightness(libusb_device_handle *remote, char *arg)
+{
+	if (strlen(arg) != 1)
+	{
+		return EINVAL;
+	}
+
+	if (!isdigit(arg[0]))
+	{
+		return EINVAL;
+	}
+
+	led_brightness = strtol(arg, NULL, 0);
+	if (led_brightness != LED_BRIGHTNESS_HI
+		&& led_brightness != LED_BRIGHTNESS_LO)
+	{
+		return EINVAL;
+	}
+	set_led_brightness(remote, led_brightness);
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
     int status 							= success;
@@ -122,46 +165,30 @@ int main(int argc, char *argv[])
 				break;
 			case 'h':
 				help();
-				exit(0);
+				return 0;
 			case 'v':
 			{
 				version();
-				exit(0);
+				return 0;
 			}
 			case 'm':
-				// since '0' is a valid value, putting in non-integers will result in the LED mode
-				// being successfully set to 0. There's no pretty way to fix this, maybe I will in the 
-				// future
-				led_mode = strtol(optarg, NULL, 0);
-				if (led_mode < 0 || led_mode > LEDMODE_BOTH)
+				status = handle_led_mode(remote_handle, optarg);
+				if (status != 0)
 				{
-					error("Invalid LED mode!\n");
-					exit(1);
+					error("Failed to set LED mode: Errno %d (%s)\n", status, strerror(status));
 				}
-				
-				dprintf("LED mode will be set to %d (%s)\n", led_mode, led_modes_str[led_mode]);
-				
-				set_led(remote_handle, led_mode);
-				printf("Successfully set LED mode to %d (%s)\n", led_mode, led_modes_str[led_mode]);
-				
-				exit(0);
+				return status;
+
 			case 'b':
 			{				
-				// since '0' is a valid value, putting in non-integers will result in the LED brightness
-				// being successfully set to 0. There's no pretty way to fix this, maybe I will in the 
-				// future. 
-				led_brightness = strtol(optarg, NULL, 0);
-				dprintf("LED brightness will be set to %d\n", led_brightness);
-				if (led_brightness != LED_BRIGHTNESS_HI
-					&& led_brightness != LED_BRIGHTNESS_LO)
+				status = handle_led_brightness(remote_handle, optarg);
 				{
-					error("Brightness must be 0 or 1!\n");
-					exit(1);
+					if (status != 0)
+					{
+						error("Failed to set LED brightness: Errno %d (%s)\n", status, strerror(status));
+					}
+					return status;
 				}
-				
-				set_led_brightness(remote_handle, led_brightness);
-				error("Successfully set LED brightness to %d\n", led_brightness);
-				exit(0);
 			}
 			case 't':
 			{
@@ -175,10 +202,11 @@ int main(int argc, char *argv[])
 	}
 	
 	version();
-	
-	// flush libusb cache
-	int flush_len = sizeof(flush_cmd);
-							
+	/**
+	 * LibUSB likes to cache the last few button presses since the driver was loaded.
+	 * To avoid incorrect button presses, flush these caches.
+	 */
+
 	do
 	{
 		dprintf("flushing, ");
@@ -186,18 +214,18 @@ int main(int argc, char *argv[])
 							APPLE_REMOTE_ENDPOINT,
 							(uint8_t *) &flush_cmd,
 							sizeof(flush_cmd),
-							&flush_len,
+							NULL,
 							10);
 		dprintf("status = %d\n", status);
 	} while (status == LIBUSB_SUCCESS);
 	
-	// do one more flush, this seems to fix things all of the time.
-	status = libusb_bulk_transfer(remote_handle,
-							APPLE_REMOTE_ENDPOINT,
-							(uint8_t *) &flush_cmd,
-							sizeof(flush_cmd),
-							&flush_len,
-							10);
+	// do one more flush, this seems to fix things
+	libusb_bulk_transfer(remote_handle,
+						 APPLE_REMOTE_ENDPOINT,
+						 (uint8_t *) &flush_cmd,
+						 sizeof(flush_cmd),
+						 NULL,
+						 10);
 	
 							
 	error("\nEntering remote test mode...\n");
@@ -205,7 +233,7 @@ int main(int argc, char *argv[])
 	
 	while (1)
 	{
-		int length = sizeof(ir_command);
+		int length;
 		status = libusb_bulk_transfer(remote_handle,
 									APPLE_REMOTE_ENDPOINT,
 									(uint8_t *) &gen_ir_command,

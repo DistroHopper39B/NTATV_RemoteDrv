@@ -23,12 +23,12 @@ int led_mode						= LEDMODE_AMBER_BLINK;
 
 static const char *led_modes_str[LEDMODE_MAX] =
 {
-    "Off",
-    "Amber",
-    "Amber (blinking) (default)",
-    "White",
-    "White (blinking)",
-    "Both blinking",
+	"Off",
+	"Amber",
+	"Amber (blinking) (default)",
+	"White",
+	"White (blinking)",
+	"Both blinking",
 };
 
 static const struct option long_options[] = 
@@ -115,44 +115,44 @@ int handle_led_brightness(libusb_device_handle *remote, char *arg)
 
 int main(int argc, char *argv[])
 {
-    int status 							= success;
-    libusb_device_handle *remote_handle = NULL;
+	int status 							= success;
+	libusb_device_handle *remote_handle = NULL;
 	int opt;
 	
 	ir_command	gen_ir_command;
 	ir_command	flush_cmd;
 		
 	status = libusb_init(NULL);
-    if (status < 0)
-    {
-        error("FATAL ERROR: libusb failed to start! (%d)\n", status);
-        return status;
-    }
-    
-    // Check to see if the device exists
-    remote_handle = libusb_open_device_with_vid_pid(NULL,
-        VENDOR_APPLE,
-        PRODUCT_APPLETV_REMOTE);
-    if (!remote_handle)
-    {
-        error("No remote found!\n");
-        status = no_remote;
-        goto done;
-    }
-    	
+	if (status < 0)
+	{
+		error("FATAL ERROR: libusb failed to start! (%d)\n", status);
+		return status;
+	}
+
+	// Check to see if the device exists
+	remote_handle = libusb_open_device_with_vid_pid(NULL,
+		VENDOR_APPLE,
+		PRODUCT_APPLETV_REMOTE);
+	if (!remote_handle)
+	{
+		error("No remote found!\n");
+		status = no_remote;
+		goto done;
+	}
+
 	status = libusb_claim_interface(remote_handle, 0);
-    if (status)
-    {
-        error("Cannot claim interface 0: Errno %d (%s)", status, libusb_strerror(status));
-        goto done;
-    }
+	if (status)
+	{
+		error("Cannot claim interface 0: Errno %d (%s)", status, libusb_strerror(status));
+		goto done;
+	}
 	
 	status = libusb_claim_interface(remote_handle, 1);
-    if (status)
-    {
-        error("Cannot claim interface 1: Errno %d (%s)", status, libusb_strerror(status));
-        goto done;
-    }
+	if (status)
+	{
+		error("Cannot claim interface 1: Errno %d (%s)", status, libusb_strerror(status));
+		goto done;
+	}
 	
 	while ((opt = getopt_long(argc, argv, "hvdm:tb:", long_options, NULL)) != -1)
 	{
@@ -246,16 +246,16 @@ int main(int argc, char *argv[])
 			process_signal(&gen_ir_command, length);
 		}
 	}
-	    
-    done:
-    if (remote_handle)
-    {
+
+	done:
+	if (remote_handle)
+	{
 		libusb_release_interface(remote_handle, 0);
-        libusb_release_interface(remote_handle, 1);
-        libusb_close(remote_handle);
-    }
+		libusb_release_interface(remote_handle, 1);
+		libusb_close(remote_handle);
+	}
 	
-    libusb_exit(NULL);
+	libusb_exit(NULL);
 	
-    return status;
+	return status;
 }

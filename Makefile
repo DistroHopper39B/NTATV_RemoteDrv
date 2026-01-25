@@ -4,7 +4,7 @@ CC = i686-w64-mingw32-gcc
 CFLAGS = -Wall
 
 TARGET = remote.exe
-OBJECTS = remote.o ir.o led.o
+OBJECTS = remote.o ir.o led.o keymap.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

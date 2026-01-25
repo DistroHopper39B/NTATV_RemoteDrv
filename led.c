@@ -8,23 +8,23 @@
 
 static int set_report(libusb_device_handle *handle, uint8_t *data, int len)
 {
-    unsigned char *type = data;
+	unsigned char *type = data;
 	int val;
 
 	val = 0x300 | *type;
 	
-    int status = success;
-    
-    status = libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS
-        | LIBUSB_RECIPIENT_INTERFACE, 9, val, 0,
-        (uint8_t *) data, len, 1000);
-        
-    if (status != len)
-    {
-        error("Error! status=%s\n", libusb_strerror(status));
-    }
-    
-    return (status != len);
+	int status = success;
+
+	status = libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS
+		| LIBUSB_RECIPIENT_INTERFACE, 9, val, 0,
+		(uint8_t *) data, len, 1000);
+
+	if (status != len)
+	{
+		error("Error! status=%s\n", libusb_strerror(status));
+	}
+
+	return (status != len);
 }
 
 void set_led_brightness(libusb_device_handle *handle, int high)
@@ -109,11 +109,11 @@ void set_led(libusb_device_handle *handle, int mode)
 void run_led_test(libusb_device_handle *remote_handle)
 {
 	for (int i = 0; i < LEDMODE_MAX; i++)
-    {
-        printf("Setting LED to mode %d...\n", i);
-        set_led(remote_handle, i);
-        sleep(5);
-    }
+	{
+		printf("Setting LED to mode %d...\n", i);
+		set_led(remote_handle, i);
+		sleep(5);
+	}
 	
 	printf("Returning to most recent LED mode...\n");
 	set_led(remote_handle, led_mode);

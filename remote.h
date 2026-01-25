@@ -6,6 +6,9 @@
 
 #pragma once
 
+#define _WIN32_WINNT        0x0501
+#define WINVER              0x0501
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,22 +18,26 @@
 #include <getopt.h>
 #include <sys/time.h>
 
+#include <windows.h>
+#include <tlhelp32.h>
+
 #include "libusb.h"
 
 #include "ir.h"
 #include "led.h"
+#include "keymap.h"
  
 #define VENDOR_APPLE 0x05ac
 #define PRODUCT_APPLETV_REMOTE 0x8241
 
 #define IS_APPLE_REMOTE(dev) ((dev->descriptor.idVendor == VENDOR_APPLE) && \
-                             ((dev->descriptor.idProduct == PRODUCT_APPLETV_REMOTE)))
-						 
-							 
+							 ((dev->descriptor.idProduct == PRODUCT_APPLETV_REMOTE)))
+
+
 typedef enum
 {
-    success = 0,
-    no_remote,
+	success = 0,
+	no_remote,
 } error_codes;
 
 extern bool debug;

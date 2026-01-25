@@ -15,9 +15,14 @@ static int set_report(libusb_device_handle *handle, uint8_t *data, int len)
 	
 	int status = success;
 
-	status = libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS
-		| LIBUSB_RECIPIENT_INTERFACE, 9, val, 0,
-		(uint8_t *) data, len, 1000);
+	status = libusb_control_transfer(handle,
+									 LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
+									 9,
+									 val,
+									 0,
+									(uint8_t *) data,
+									len,
+									1000);
 
 	if (status != len)
 	{

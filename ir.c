@@ -205,35 +205,29 @@ void handle_button_apple(uint8_t button)
 {
 	switch (button)
 	{
-		case APPLE_REMOTE_TIMEOUT:
-			printf("Timeout\n");
-			break;
-		case APPLE_REMOTE_RESVD:
-			printf("Reserved\n");
-			break;
 		case APPLE_REMOTE_MENU1:
 		case APPLE_REMOTE_MENU2:
-			printf("Menu\n");
+            press_key(REMOTE_BUTTON_APPLE_MENU);
 			break;
 		case APPLE_REMOTE_PLAY1:
 		case APPLE_REMOTE_PLAY2:
-			printf("Play/Pause\n");
+            press_key(REMOTE_BUTTON_APPLE_PLAY_PAUSE);
 			break;
 		case APPLE_REMOTE_RIGHT1:
 		case APPLE_REMOTE_RIGHT2:
-			printf("Fast Forward\n");
+			press_key(REMOTE_BUTTON_APPLE_FAST_FWD);
 			break;
 		case APPLE_REMOTE_LEFT1:
 		case APPLE_REMOTE_LEFT2:
-			printf("Rewind\n");
+            press_key(REMOTE_BUTTON_APPLE_REWIND);
 			break;
 		case APPLE_REMOTE_UP1:
 		case APPLE_REMOTE_UP2:
-			printf("Volume Up\n");
+            press_key(REMOTE_BUTTON_APPLE_VOLUME_UP);
 			break;
 		case APPLE_REMOTE_DOWN1:
 		case APPLE_REMOTE_DOWN2:
-			printf("Volume Down\n");
+            press_key(REMOTE_BUTTON_APPLE_VOLUME_DOWN);
 			break;
 		default:
 			printf("Unknown button %x\n", button);

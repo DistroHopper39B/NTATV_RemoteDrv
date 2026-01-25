@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 						 NULL,
 						 10);
 	
-							
+	setup_keymap();
 	error("\nEntering remote test mode...\n");
 	error("Press a button on your Apple remote to see the status or press Control-C to quit.\n");
 	

@@ -163,6 +163,6 @@ typedef enum
 	VENFE_BUTTON_INFO		= 0x2fd0,
 } ir_buttons_vendor_fe;
 
-#define APPLE_REMOTE_ENDPOINT 0x82
+#define APPLE_REMOTE_ENDPOINT 0x2
 
 void process_signal(void *signal, int len);

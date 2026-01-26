@@ -111,5 +111,6 @@ typedef struct {
 	const char*		name;
 } key_map;
 
-void press_key(remote_button button);
+boolean press_key(remote_button button);
+boolean release_key(void);
 void setup_keymap(void);

@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
 	int status 							= success;
 	libusb_device_handle *remote_handle = NULL;
 	int opt;
+	boolean key_down					= false;
 	
 	ir_command	gen_ir_command;
 	ir_command	flush_cmd;
@@ -206,12 +207,12 @@ int main(int argc, char *argv[])
 	 * LibUSB likes to cache the last few button presses since the driver was loaded.
 	 * To avoid incorrect button presses, flush these caches.
 	 */
-
+	/*
 	do
 	{
 		dprintf("flushing, ");
 		status = libusb_bulk_transfer(remote_handle,
-							APPLE_REMOTE_ENDPOINT,
+							LIBUSB_ENDPOINT_IN | APPLE_REMOTE_ENDPOINT,
 							(uint8_t *) &flush_cmd,
 							sizeof(flush_cmd),
 							NULL,
@@ -221,29 +222,39 @@ int main(int argc, char *argv[])
 	
 	// do one more flush, this seems to fix things
 	libusb_bulk_transfer(remote_handle,
-						 APPLE_REMOTE_ENDPOINT,
+						 LIBUSB_ENDPOINT_IN | APPLE_REMOTE_ENDPOINT,
 						 (uint8_t *) &flush_cmd,
 						 sizeof(flush_cmd),
 						 NULL,
 						 10);
-	
+	*/
 	setup_keymap();
+
 	error("\nEntering remote test mode...\n");
 	error("Press a button on your Apple remote to see the status or press Control-C to quit.\n");
 	
 	while (1)
 	{
 		int length;
-		status = libusb_bulk_transfer(remote_handle,
-									APPLE_REMOTE_ENDPOINT,
+		status = libusb_interrupt_transfer(remote_handle,
+									LIBUSB_ENDPOINT_IN | APPLE_REMOTE_ENDPOINT,
 									(uint8_t *) &gen_ir_command,
 									sizeof(ir_command),
 									&length,
-									0);
+									100);
 		
 		if (status == LIBUSB_SUCCESS)
 		{
+			key_down = true;
 			process_signal(&gen_ir_command, length);
+		}
+		else
+		{
+			if (key_down == true)
+			{
+				release_key();
+			}
+			key_down = false;
 		}
 	}
 

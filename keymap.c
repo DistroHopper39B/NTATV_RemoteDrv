@@ -7,6 +7,7 @@
 #include "remote.h"
 
 bool map_initialized = false;
+key_map pressed_key;
 
 static const char *remote_button_name[REMOTE_BUTTON_MAX] =
 {
@@ -117,35 +118,35 @@ const char *get_name(remote_button button)
 }
  */
 
-void press_key(remote_button button)
+boolean press_key(remote_button button)
 {
 	int inputs_count = 0;
-	INPUT inputs[10];
+	INPUT inputs[5];
 
 	if (!map_initialized)
 	{
 		error("Keymap not initialized\n");
-		return;
+		return FALSE;
 	}
 
 	if (button >= REMOTE_BUTTON_MAX)
 	{
 		error("Button %d too high\n", button);
-		return;
+		return FALSE;
 	}
 
-	key_map key = map[button];
+	pressed_key = map[button];
 
-	printf("Executing action: %s\n", key.name);
+	printf("Executing action: %s\n", pressed_key.name);
 
-	if (key.key_code == 0)
+	if (pressed_key.key_code == 0)
 	{
 		error("Button %d does not correspond with key code\n", button);
-		return;
+		return FALSE;
 	}
 
 	// Key down for modifiers
-	if (key.modifiers & MOD_WIN)
+	if (pressed_key.modifiers & MOD_WIN)
 	{
 		inputs[inputs_count].type 			= INPUT_KEYBOARD;
 		inputs[inputs_count].ki.wVk			= VK_LWIN;
@@ -156,7 +157,7 @@ void press_key(remote_button button)
 		inputs_count++;
 	}
 
-	if (key.modifiers & MOD_CONTROL)
+	if (pressed_key.modifiers & MOD_CONTROL)
 	{
 		inputs[inputs_count].type 			= INPUT_KEYBOARD;
 		inputs[inputs_count].ki.wVk			= VK_CONTROL;
@@ -167,7 +168,7 @@ void press_key(remote_button button)
 		inputs_count++;
 	}
 
-	if (key.modifiers & MOD_SHIFT)
+	if (pressed_key.modifiers & MOD_SHIFT)
 	{
 		inputs[inputs_count].type 			= INPUT_KEYBOARD;
 		inputs[inputs_count].ki.wVk			= VK_SHIFT;
@@ -180,16 +181,25 @@ void press_key(remote_button button)
 
 	// Key down for main key
 	inputs[inputs_count].type 			= INPUT_KEYBOARD;
-	inputs[inputs_count].ki.wVk			= key.key_code;
+	inputs[inputs_count].ki.wVk			= pressed_key.key_code;
 	inputs[inputs_count].ki.wScan		= 0;
 	inputs[inputs_count].ki.dwFlags		= 0;
 	inputs[inputs_count].ki.time		= 0;
 	inputs[inputs_count].ki.dwExtraInfo	= 0;
 	inputs_count++;
 
-	// Key up for main key
+	SendInput(inputs_count, inputs, sizeof(INPUT));
+	return TRUE;
+}
+
+boolean release_key(void)
+{
+	int inputs_count = 0;
+	INPUT inputs[5];
+
+	// Key up for main pressed_key
 	inputs[inputs_count].type 			= INPUT_KEYBOARD;
-	inputs[inputs_count].ki.wVk			= key.key_code;
+	inputs[inputs_count].ki.wVk			= pressed_key.key_code;
 	inputs[inputs_count].ki.wScan		= 0;
 	inputs[inputs_count].ki.dwFlags		= KEYEVENTF_KEYUP;
 	inputs[inputs_count].ki.time		= 0;
@@ -197,7 +207,7 @@ void press_key(remote_button button)
 	inputs_count++;
 
 	// Key up for modifiers
-	if (key.modifiers & MOD_WIN)
+	if (pressed_key.modifiers & MOD_WIN)
 	{
 		inputs[inputs_count].type 			= INPUT_KEYBOARD;
 		inputs[inputs_count].ki.wVk			= VK_LWIN;
@@ -208,7 +218,7 @@ void press_key(remote_button button)
 		inputs_count++;
 	}
 
-	if (key.modifiers & MOD_CONTROL)
+	if (pressed_key.modifiers & MOD_CONTROL)
 	{
 		inputs[inputs_count].type 			= INPUT_KEYBOARD;
 		inputs[inputs_count].ki.wVk			= VK_CONTROL;
@@ -219,7 +229,7 @@ void press_key(remote_button button)
 		inputs_count++;
 	}
 
-	if (key.modifiers & MOD_SHIFT)
+	if (pressed_key.modifiers & MOD_SHIFT)
 	{
 		inputs[inputs_count].type 			= INPUT_KEYBOARD;
 		inputs[inputs_count].ki.wVk			= VK_SHIFT;
@@ -231,6 +241,7 @@ void press_key(remote_button button)
 	}
 
 	SendInput(inputs_count, inputs, sizeof(INPUT));
+	return TRUE;
 }
 
 void setup_keymap(void)

@@ -6,6 +6,8 @@
 
 #include "remote.h"
 
+extern key_map pressed_key;
+
 static
 void dumphex(uint8_t *buf, int len)
 {
@@ -201,37 +203,45 @@ void process_signal_ven6b(void *signal, int len)
 }
 
 static
-void handle_button_apple(uint8_t button)
+remote_button get_remote_button_apple(uint8_t vendor_button)
 {
-	switch (button)
+	switch (vendor_button)
 	{
 		case APPLE_REMOTE_MENU1:
 		case APPLE_REMOTE_MENU2:
-            press_key(REMOTE_BUTTON_APPLE_MENU);
-			break;
+			return REMOTE_BUTTON_APPLE_MENU;
 		case APPLE_REMOTE_PLAY1:
 		case APPLE_REMOTE_PLAY2:
-            press_key(REMOTE_BUTTON_APPLE_PLAY_PAUSE);
-			break;
+			return REMOTE_BUTTON_APPLE_PLAY_PAUSE;
 		case APPLE_REMOTE_RIGHT1:
 		case APPLE_REMOTE_RIGHT2:
-			press_key(REMOTE_BUTTON_APPLE_FAST_FWD);
-			break;
+			return REMOTE_BUTTON_APPLE_FAST_FWD;
 		case APPLE_REMOTE_LEFT1:
 		case APPLE_REMOTE_LEFT2:
-            press_key(REMOTE_BUTTON_APPLE_REWIND);
-			break;
+			return REMOTE_BUTTON_APPLE_REWIND;
 		case APPLE_REMOTE_UP1:
 		case APPLE_REMOTE_UP2:
-            press_key(REMOTE_BUTTON_APPLE_VOLUME_UP);
-			break;
+			return REMOTE_BUTTON_APPLE_VOLUME_UP;
 		case APPLE_REMOTE_DOWN1:
 		case APPLE_REMOTE_DOWN2:
-            press_key(REMOTE_BUTTON_APPLE_VOLUME_DOWN);
-			break;
+			return REMOTE_BUTTON_APPLE_VOLUME_DOWN;
 		default:
-			printf("Unknown button %x\n", button);
-			break;
+			return 0xFF;
+	}
+}
+
+static
+void handle_button_apple(uint8_t vendor_button)
+{
+	remote_button button = get_remote_button_apple(vendor_button);
+
+	if (button < REMOTE_BUTTON_MAX)
+	{
+		press_key(button);
+	}
+	else
+	{
+		error("Unknown button %d\n", vendor_button);
 	}
 }
 

@@ -165,4 +165,4 @@ typedef enum
 
 #define APPLE_REMOTE_ENDPOINT 0x2
 
-void process_signal(void *signal, int len);
+bool process_signal(void *signal, int len);

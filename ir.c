@@ -226,23 +226,23 @@ remote_button get_remote_button_apple(uint8_t vendor_button)
 		case APPLE_REMOTE_DOWN2:
 			return REMOTE_BUTTON_APPLE_VOLUME_DOWN;
 		default:
-			return 0xFF;
+			return REMOTE_BUTTON_INVALID;
 	}
 }
 
 static
-void handle_button_apple(uint8_t vendor_button)
+bool handle_button_apple(uint8_t vendor_button)
 {
 	remote_button button = get_remote_button_apple(vendor_button);
 
 	if (button < REMOTE_BUTTON_MAX)
 	{
 		press_key(button);
+		return true;
 	}
-	else
-	{
-		error("Unknown button %d\n", vendor_button);
-	}
+
+	error("Unknown button %d\n", vendor_button);
+	return false;
 }
 
 static
@@ -265,7 +265,7 @@ void handle_pairing_apple(uint8_t addr, uint8_t pair_command)
 }
 
 static
-void process_signal_apple(void *signal, int len)
+bool process_signal_apple(void *signal, int len)
 {
 	ir_command_vendor_apple *ir = signal;
 
@@ -277,22 +277,28 @@ void process_signal_apple(void *signal, int len)
 	switch (ir->event)
 	{
 		case APPLE_REMOTE_BUTTON:
-			handle_button_apple(ir->event_id);
-			break;
+			return handle_button_apple(ir->event_id);
 		case APPLE_REMOTE_PAIRING:
 			handle_pairing_apple(ir->addr, ir->event_id);
-			break;
+			return false;
 		default:
 			error("Unknown event %x\n", ir->event);
-			break;
+			return false;
 	}
 }
 
-void process_signal(void *signal, int len)
+/**
+ * process_signal(void *, int)
+ * @param signal Signal sent by remote control
+ * @param len Length of command
+ * @return Whether or not a key was pressed
+ */
+
+bool process_signal(void *signal, int len)
 {
 	ir_command *ir = signal;
 
-	if (len < 5) return;
+	if (len < 5) return false;
 
 	if (debug)
 	{
@@ -303,17 +309,19 @@ void process_signal(void *signal, int len)
 	if (ir->vendor == REMOTE_VENDOR_APPLE)
 	{
 		dprintf("Apple remote\n");
-		process_signal_apple(signal, len);
+		return process_signal_apple(signal, len);
 	}
 	else if (ir->vendor == REMOTE_VENDOR_6B)
 	{
 		dprintf("Generic remote (vendor = 6b)\n");
 		process_signal_ven6b(signal, len);
+		return false;
 	}
 	else if (ir->vendor == REMOTE_VENDOR_FE)
 	{
 		dprintf("Generic remote (vendor = fe)\n");
 		process_signal_venfe(signal, len);
+		return false;
 	}
 	else
 	{
@@ -327,5 +335,6 @@ void process_signal(void *signal, int len)
 		}
 		printf("Hex output: ");
 		dumphex(signal, len);
+		return false;
 	}
 }

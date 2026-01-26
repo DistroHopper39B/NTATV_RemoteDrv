@@ -101,7 +101,8 @@ typedef enum
 	REMOTE_BUTTON_BLACK,
 	REMOTE_BUTTON_WHITE,
 
-	REMOTE_BUTTON_MAX
+	REMOTE_BUTTON_MAX,
+	REMOTE_BUTTON_INVALID = 0xFF
 } remote_button;
 
 typedef struct {

@@ -17,7 +17,7 @@ typedef enum
 
 typedef struct
 {
-	uint8_t dat00;
+	uint8_t flags;
 	uint8_t vendor;
 	uint8_t dat02;
 	uint8_t dat03;

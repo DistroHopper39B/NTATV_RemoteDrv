@@ -221,6 +221,10 @@ int main(int argc, char *argv[])
 		
 		if (status == LIBUSB_SUCCESS)
 		{
+			// All other remotes don't seem to handle these differently.
+			if (command.flags == APPLE_REMOTE_PRESS)
+				command.flags = APPLE_REMOTE_REPEAT;
+
 			// Handle very quick button switches
 			if (key_down == true)
 			{

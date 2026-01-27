@@ -269,11 +269,6 @@ bool process_signal_apple(void *signal, int len)
 {
 	ir_command_vendor_apple *ir = signal;
 
-	if (ir->flags == APPLE_REMOTE_REPEAT)
-	{
-		printf("Repeat: ");
-	}
-
 	switch (ir->event)
 	{
 		case APPLE_REMOTE_BUTTON:

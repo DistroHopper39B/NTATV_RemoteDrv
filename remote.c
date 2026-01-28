@@ -206,6 +206,17 @@ int main(int argc, char *argv[])
 
 	setup_keymap();
 
+	// Flush cache
+	do
+	{
+		status = libusb_interrupt_transfer(remote_handle,
+										   LIBUSB_ENDPOINT_IN | APPLE_REMOTE_ENDPOINT,
+										   (uint8_t *) &command,
+										   sizeof(ir_command),
+										   NULL,
+										   10);
+	} while (status == LIBUSB_SUCCESS);
+
 	error("\nEntering remote test mode...\n");
 	error("Press a button on your Apple remote to see the status or press Control-C to quit.\n");
 	

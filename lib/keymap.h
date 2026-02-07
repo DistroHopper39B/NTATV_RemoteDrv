@@ -13,6 +13,8 @@
 
 typedef enum
 {
+	REMOTE_BUTTON_NOT_PAIRED,
+
 	REMOTE_BUTTON_APPLE_MENU,
 	REMOTE_BUTTON_APPLE_PLAY_PAUSE,
 	REMOTE_BUTTON_APPLE_FAST_FWD,
@@ -105,13 +107,14 @@ typedef enum
 	REMOTE_BUTTON_INVALID = 0xFF
 } remote_button;
 
-typedef struct {
+typedef struct
+{
 	remote_button 	button; // Intermediate button format
 	uint8_t     	modifiers; // Modifiers
 	uint8_t 		key_code; // Virtual key_code code for SendKey
 	const char*		name;
 } key_map;
 
-boolean press_key(remote_button button);
-boolean release_key(void);
+bool press_key(remote_button button);
+bool release_key(void);
 void setup_keymap(void);

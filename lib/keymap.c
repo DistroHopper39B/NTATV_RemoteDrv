@@ -4,13 +4,16 @@
  * SPDX-License-Identifier: GPL-2.0-only
  */
 
-#include "remote.h"
+#include "appleir.h"
 
 bool map_initialized = false;
+volatile key_map map[REMOTE_BUTTON_MAX];
 key_map pressed_key;
 
 static const char *remote_button_name[REMOTE_BUTTON_MAX] =
 {
+		"Unpaired Button",
+
 		"Apple_Menu",
 		"Apple_Play/Pause",
 		"Apple_Fast Forward",
@@ -100,25 +103,7 @@ static const char *remote_button_name[REMOTE_BUTTON_MAX] =
 		"White",
 };
 
-key_map map[REMOTE_BUTTON_MAX];
-/*
-uint8_t get_modifiers(remote_button button)
-{
-	return map[button].modifiers;
-}
-
-uint8_t get_key(remote_button button)
-{
-	return map[button].key_code;
-}
-
-const char *get_name(remote_button button)
-{
-	return map[button].name;
-}
- */
-
-boolean press_key(remote_button button)
+bool press_key(remote_button button)
 {
 	int inputs_count = 0;
 	INPUT inputs[5];
@@ -192,7 +177,7 @@ boolean press_key(remote_button button)
 	return TRUE;
 }
 
-boolean release_key(void)
+bool release_key(void)
 {
 	int inputs_count = 0;
 	INPUT inputs[5];
@@ -244,12 +229,12 @@ boolean release_key(void)
 	return TRUE;
 }
 
-void setup_keymap(void)
+__declspec(dllexport) volatile key_map *appleir_get_keymap(void)
 {
 	if (!map_initialized)
 	{
 		// we could fill this in statically, but eh...
-		memset(&map, 0, sizeof(map));
+		memset((void *) &map, 0, sizeof(map));
 		for (int i = 0; i < REMOTE_BUTTON_MAX; i++)
 		{
 			map[i].button = i;
@@ -257,20 +242,7 @@ void setup_keymap(void)
 		}
 	}
 
-	// TODO: This is where we're gonna get config from the registry. for now we hardcode
-
-	map[REMOTE_BUTTON_APPLE_MENU].modifiers 		= 0;
-	map[REMOTE_BUTTON_APPLE_MENU].key_code 			= VK_LWIN;
-	map[REMOTE_BUTTON_APPLE_PLAY_PAUSE].modifiers	= 0;
-	map[REMOTE_BUTTON_APPLE_PLAY_PAUSE].key_code	= VK_RETURN;
-	map[REMOTE_BUTTON_APPLE_FAST_FWD].modifiers 	= 0;
-	map[REMOTE_BUTTON_APPLE_FAST_FWD].key_code		= VK_RIGHT;
-	map[REMOTE_BUTTON_APPLE_REWIND].modifiers		= 0;
-	map[REMOTE_BUTTON_APPLE_REWIND].key_code		= VK_LEFT;
-	map[REMOTE_BUTTON_APPLE_VOLUME_UP].modifiers	= 0;
-	map[REMOTE_BUTTON_APPLE_VOLUME_UP].key_code		= VK_UP,
-	map[REMOTE_BUTTON_APPLE_VOLUME_DOWN].modifiers	= 0;
-	map[REMOTE_BUTTON_APPLE_VOLUME_DOWN].key_code	= VK_DOWN;
-
 	map_initialized = true;
+
+	return map;
 }

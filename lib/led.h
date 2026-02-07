@@ -23,10 +23,3 @@ typedef enum
 	LED_BRIGHTNESS_HI,
 	LED_BRIGHTNESS_MAX
 } led_brightnesses;
-
-extern int led_brightness;
-extern int led_mode;
-
-void set_led(libusb_device_handle *handle, int mode);
-void set_led_brightness(libusb_device_handle *handle, int high);
-void run_led_test(libusb_device_handle *remote_handle);

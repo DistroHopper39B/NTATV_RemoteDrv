@@ -15,15 +15,6 @@ typedef enum
 	REMOTE_VENDOR_FE		= 0xFE, // Unknown vendor (0xFE)
 } ir_vendors;
 
-typedef struct
-{
-	uint8_t flags;
-	uint8_t vendor;
-	uint8_t dat02;
-	uint8_t dat03;
-	uint8_t dat04;
-} ir_command;
-
 /*
  * REMOTE DEVICE
  * Vendor: 	Apple
@@ -43,13 +34,13 @@ typedef enum
 {
 	APPLE_REMOTE_PRESS		= 0x25,
 	APPLE_REMOTE_REPEAT		= 0x26,
-} ir_flags_apple;
+} ir_flags_vendor_apple;
 
 typedef enum
 {
 	APPLE_REMOTE_BUTTON		= 0xEE,
 	APPLE_REMOTE_PAIRING	= 0xE0,
-} ir_events_apple;
+} ir_events_vendor_apple;
 
 typedef enum
 {
@@ -67,7 +58,7 @@ typedef enum
 	APPLE_REMOTE_UP2		= 0x0B,
 	APPLE_REMOTE_DOWN1		= 0x0C,
 	APPLE_REMOTE_DOWN2		= 0x0D,
-} ir_eventids_general_apple;
+} ir_buttons_vendor_apple;
 
 typedef enum
 {
@@ -87,19 +78,10 @@ typedef struct
 {
 	uint8_t flags; // Always 0x26
 	uint8_t vendor;
-	uint8_t __unknown2; // Always 0x86
+	uint8_t __unknown; // Always 0x86
 	uint8_t button_1;
 	uint8_t button_2;
 } ir_command_vendor_6b;
-
-/*
- * Power: ed 12
- * Up: e4 1b
- * Down: e5 1a
- * Left: fb 04
- * Right: f9 06
- * Center: fa 05
- */
 
 typedef enum
 {
@@ -125,6 +107,15 @@ typedef struct
 	uint8_t button_1;
 	uint8_t button_2;
 } ir_command_vendor_fe;
+
+typedef struct
+{
+	uint8_t flags;
+	uint8_t vendor;
+	uint8_t dat02;
+	uint8_t dat03;
+	uint8_t dat04;
+} ir_command;
 
 typedef enum
 {
@@ -162,6 +153,21 @@ typedef enum
 	VENFE_BUTTON_PICTURES	= 0xa659,
 	VENFE_BUTTON_INFO		= 0x2fd0,
 } ir_buttons_vendor_fe;
+
+typedef enum
+{
+	REMOTE_EVENT_BUTTONPRESS,
+	REMOTE_EVENT_PAIR,
+	REMOTE_EVENT_INVALID,
+} remote_event;
+
+typedef struct
+{
+	ir_command command;
+	ir_command previous_command;
+	remote_button button;
+	remote_event event;
+} internal_irctx;
 
 #define APPLE_REMOTE_ENDPOINT 0x2
 

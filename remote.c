@@ -4,10 +4,22 @@
  * SPDX-License-Identifier: GPL-2.0-only
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <sys/time.h>
+
+#include <windows.h>
+
+
 #include "remote.h"
 
 #ifdef __linux__
-#error "This program is designed for Windows. Please use atvclient on Linux."
+#printf "This program is designed for Windows. Please use atvclient on Linux."
 #endif
 
 
@@ -15,11 +27,7 @@
 #define VERSION_MINOR 0
 #define VERSION_PATCH 1
 
-bool debug = false;
-
 // defaults on startup
-int led_brightness 					= LED_BRIGHTNESS_HI;
-int led_mode						= LEDMODE_AMBER_BLINK;
 
 static const char *led_modes_str[LEDMODE_MAX] =
 {
@@ -37,40 +45,38 @@ static const struct option long_options[] =
 	{"version", no_argument, NULL, 'v'},
 	{"debug", no_argument, NULL, 'd'},
 	{"led-mode", required_argument, NULL, 'm'},
-	{"led-test", no_argument, NULL, 't'},
 	{"led-brightness", required_argument, NULL, 'b'}
 };
 
 static void version(void)
 {
-	error("Apple TV Remote Driver for Windows NT version %d.%d.%d\n",
+	printf("Apple TV Remote Driver for Windows NT version %d.%d.%d\n",
 		VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
-	error("This program is part of NTATV (https://github.com/DistroHopper39B/NTATV)\n");
+	printf("This program is part of NTATV (https://github.com/DistroHopper39B/NTATV)\n");
 }
 
 static void help(void)
 {
 	version();
-	error("\n");
+	printf("\n");
 	
-	error("The following options are available:\n");
-	error("-h, --help \t\tShow this help screen.\n");
-	error("-v, --version \t\tShow version number.\n");
-	error("-d, --debug \t\tEnable verbose output.\n");
-	error("-m, --led-mode \t\tChange the front LED's mode of operation.\n");
-	error("Supported LED modes:\n");
+	printf("The following options are available:\n");
+	printf("-h, --help \t\tShow this help screen.\n");
+	printf("-v, --version \t\tShow version number.\n");
+	printf("-d, --debug \t\tEnable verbose output.\n");
+	printf("-m, --led-mode \t\tChange the front LED's mode of operation.\n");
+	printf("Supported LED modes:\n");
 	for (int i = 0; i < LEDMODE_MAX; i++)
 	{
-		error("    %i: %s\n", i, led_modes_str[i]);
+		printf("    %i: %s\n", i, led_modes_str[i]);
 	}
-	error("-t, --led-test \t\tTest all LED modes.\n");
-	error("-b, --led-brightness \tChange the brightness of the front LED.\n");
-	error("Supported LED brightnesses:\n");
-	error("    0: Dim\n");
-	error("    1: Bright (default)\n");
+	printf("-b, --led-brightness \tChange the brightness of the front LED.\n");
+	printf("Supported LED brightnesses:\n");
+	printf("    0: Dim\n");
+	printf("    1: Bright (default)\n");
 }
 
-int handle_led_mode(libusb_device_handle *remote, char *arg)
+int handle_led_mode(appleir_device_handle device, char *arg)
 {
 	if (strlen(arg) != 1)
 	{
@@ -82,16 +88,16 @@ int handle_led_mode(libusb_device_handle *remote, char *arg)
 		return EINVAL;
 	}
 
-	led_mode = strtol(arg, NULL, 0);
+	int led_mode = strtol(arg, NULL, 0);
 	if (led_mode < LEDMODE_OFF || led_mode > LEDMODE_BOTH)
 	{
 		return EINVAL;
 	}
-	set_led(remote, led_mode);
+	appleir_set_led(device, led_mode);
 	return 0;
 }
 
-int handle_led_brightness(libusb_device_handle *remote, char *arg)
+int handle_led_brightness(appleir_device_handle device, char *arg)
 {
 	if (strlen(arg) != 1)
 	{
@@ -103,66 +109,38 @@ int handle_led_brightness(libusb_device_handle *remote, char *arg)
 		return EINVAL;
 	}
 
-	led_brightness = strtol(arg, NULL, 0);
+	int led_brightness = strtol(arg, NULL, 0);
 	if (led_brightness != LED_BRIGHTNESS_HI
 		&& led_brightness != LED_BRIGHTNESS_LO)
 	{
 		return EINVAL;
 	}
-	set_led_brightness(remote, led_brightness);
+	appleir_set_led_brightness(device, led_brightness);
 	return 0;
 }
 
 int main(int argc, char *argv[])
 {
-	int status 							= success;
-	libusb_device_handle *remote_handle = NULL;
+	int status 						= success;
+	appleir_device_handle device	= NULL;
+	volatile key_map *map			= NULL;
 	int opt;
-	boolean key_down					= false;
-	
-	ir_command	command;
-	ir_command 	last_command;
 
-	status = libusb_init(NULL);
-	if (status < 0)
+	device = appleir_open();
+	if (!device)
 	{
-		error("FATAL ERROR: libusb failed to start! (%d)\n", status);
-		return status;
-	}
-
-	// Check to see if the device exists
-	remote_handle = libusb_open_device_with_vid_pid(NULL,
-		VENDOR_APPLE,
-		PRODUCT_APPLETV_REMOTE);
-	if (!remote_handle)
-	{
-		error("No remote found!\n");
+		printf("Cannot find remote!\n");
 		status = no_remote;
 		goto done;
 	}
 
-	status = libusb_claim_interface(remote_handle, 0);
-	if (status)
-	{
-		error("Cannot claim interface 0: Errno %d (%s)", status, libusb_strerror(status));
-		goto done;
-	}
-	
-	status = libusb_claim_interface(remote_handle, 1);
-	if (status)
-	{
-		error("Cannot claim interface 1: Errno %d (%s)", status, libusb_strerror(status));
-		goto done;
-	}
-	
-	while ((opt = getopt_long(argc, argv, "hvdm:tb:", long_options, NULL)) != -1)
+	while ((opt = getopt_long(argc, argv, "hvdm:b:", long_options, NULL)) != -1)
 	{
 		switch (opt)
 		{
 			// we do this one first to ensure debug output ASAP
 			case 'd':
-				libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
-				debug = true;
+				appleir_debug(true);
 				break;
 			case 'h':
 				help();
@@ -173,28 +151,23 @@ int main(int argc, char *argv[])
 				return 0;
 			}
 			case 'm':
-				status = handle_led_mode(remote_handle, optarg);
+				status = handle_led_mode(device, optarg);
 				if (status != 0)
 				{
-					error("Failed to set LED mode: Errno %d (%s)\n", status, strerror(status));
+					printf("Failed to set LED mode: Errno %d (%s)\n", status, strerror(status));
 				}
 				return status;
 
 			case 'b':
 			{				
-				status = handle_led_brightness(remote_handle, optarg);
+				status = handle_led_brightness(device, optarg);
 				{
 					if (status != 0)
 					{
-						error("Failed to set LED brightness: Errno %d (%s)\n", status, strerror(status));
+						printf("Failed to set LED brightness: Errno %d (%s)\n", status, strerror(status));
 					}
 					return status;
 				}
-			}
-			case 't':
-			{
-				run_led_test(remote_handle);
-				exit(0);
 			}
 			default:
 				help();
@@ -204,69 +177,30 @@ int main(int argc, char *argv[])
 	
 	version();
 
-	setup_keymap();
+	map = appleir_get_keymap();
 
-	// Flush cache
-	do
-	{
-		status = libusb_interrupt_transfer(remote_handle,
-										   LIBUSB_ENDPOINT_IN | APPLE_REMOTE_ENDPOINT,
-										   (uint8_t *) &command,
-										   sizeof(ir_command),
-										   NULL,
-										   10);
-	} while (status == LIBUSB_SUCCESS);
+	// TODO: This is where we're gonna get config from the registry. for now we hardcode
+	map[REMOTE_BUTTON_APPLE_MENU].modifiers 		= 0;
+	map[REMOTE_BUTTON_APPLE_MENU].key_code 			= VK_LWIN;
+	map[REMOTE_BUTTON_APPLE_PLAY_PAUSE].modifiers	= 0;
+	map[REMOTE_BUTTON_APPLE_PLAY_PAUSE].key_code	= VK_RETURN;
+	map[REMOTE_BUTTON_APPLE_FAST_FWD].modifiers 	= 0;
+	map[REMOTE_BUTTON_APPLE_FAST_FWD].key_code		= VK_RIGHT;
+	map[REMOTE_BUTTON_APPLE_REWIND].modifiers		= 0;
+	map[REMOTE_BUTTON_APPLE_REWIND].key_code		= VK_LEFT;
+	map[REMOTE_BUTTON_APPLE_VOLUME_UP].modifiers	= 0;
+	map[REMOTE_BUTTON_APPLE_VOLUME_UP].key_code		= VK_UP,
+	map[REMOTE_BUTTON_APPLE_VOLUME_DOWN].modifiers	= 0;
+	map[REMOTE_BUTTON_APPLE_VOLUME_DOWN].key_code	= VK_DOWN;
 
-	error("\nEntering remote test mode...\n");
-	error("Press a button on your Apple remote to see the status or press Control-C to quit.\n");
-	
-	while (1)
-	{
-		int length;
-		status = libusb_interrupt_transfer(remote_handle,
-									LIBUSB_ENDPOINT_IN | APPLE_REMOTE_ENDPOINT,
-									(uint8_t *) &command,
-									sizeof(ir_command),
-									&length,
-									100);
-		
-		if (status == LIBUSB_SUCCESS)
-		{
-			// All other remotes don't seem to handle these differently.
-			if (command.flags == APPLE_REMOTE_PRESS)
-				command.flags = APPLE_REMOTE_REPEAT;
+	printf("\nEntering remote test mode...\n");
+	printf("Press a button on your Apple remote to see the status or press Control-C to quit.\n");
 
-			// Handle very quick button switches
-			if (key_down == true)
-			{
-				if (memcmp(&command, &last_command, sizeof(command)) != 0)
-				{
-					release_key();
-				}
-			}
+	HANDLE thread = CreateThread(NULL, 0, appleir_remote_loop, device, 0, NULL);
+	WaitForSingleObject(thread, INFINITE);
 
-			key_down = process_signal(&command, length);
-			last_command = command;
-		}
-		else
-		{
-			if (key_down == true)
-			{
-				release_key();
-			}
-			key_down = false;
-		}
-	}
-
-	done:
-	if (remote_handle)
-	{
-		libusb_release_interface(remote_handle, 0);
-		libusb_release_interface(remote_handle, 1);
-		libusb_close(remote_handle);
-	}
-	
-	libusb_exit(NULL);
+done:
+	appleir_close(device);
 	
 	return status;
 }

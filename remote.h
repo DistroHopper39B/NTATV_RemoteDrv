@@ -136,10 +136,10 @@ typedef enum
 
 typedef struct
 {
-	remote_button   button; // Intermediate button format
-	uint8_t     	modifiers; // Modifiers
-	uint8_t 		key_code; // Virtual key_code code for SendKey
-	const char*		name;
+	volatile remote_button  button; // Intermediate button format
+	volatile uint8_t     	modifiers; // Modifiers
+	volatile uint8_t 		key_code; // Virtual key_code code for SendKey
+	volatile const char*	name;
 } key_map;
 // Public handle type for IR handle.
 typedef void *appleir_device_handle;

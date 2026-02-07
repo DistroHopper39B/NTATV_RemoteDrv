@@ -197,7 +197,15 @@ int main(int argc, char *argv[])
 	printf("Press a button on your Apple remote to see the status or press Control-C to quit.\n");
 
 	HANDLE thread = CreateThread(NULL, 0, appleir_remote_loop, device, 0, NULL);
-	WaitForSingleObject(thread, INFINITE);
+	while (thread)
+	{
+		for (int i = 0; i < LEDMODE_MAX; i++)
+		{
+			printf("Setting LED to mode %d...\n", i);
+			appleir_set_led(device, i);
+			sleep(5);
+		}
+	}
 
 done:
 	appleir_close(device);

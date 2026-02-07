@@ -6,7 +6,7 @@ CFLAGS = -Wall
 TARGET_APP = remote.exe
 TARGET_LIB = appleir.dll
 OBJECTS_APP = remote.o
-OBJECTS_LIB = lib/ir.o lib/led.o lib/keymap.o
+OBJECTS_LIB = lib/appleir.o lib/ir.o lib/led.o lib/keymap.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

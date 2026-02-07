@@ -34,7 +34,7 @@ static int set_report(libusb_device_handle *handle, uint8_t *data, int len)
 
 __declspec(dllexport) void appleir_set_led_brightness(appleir_device_handle device, int high)
 {
-	libusb_device_handle *handle = device;
+	remote_handle = device;
 
 	unsigned char buf[5];
 
@@ -43,19 +43,19 @@ __declspec(dllexport) void appleir_set_led_brightness(appleir_device_handle devi
 
 	if (high) {
 		buf[1] = 6;
-		set_report(handle, buf, sizeof(buf));
+		set_report(remote_handle, buf, sizeof(buf));
 		buf[1] = 5; buf[2] = 1;
-		set_report(handle, buf, 3);
+		set_report(remote_handle, buf, 3);
 	} else {
 		buf[1] = 5;
-		set_report(handle, buf, sizeof(buf));
-		set_report(handle, buf, 3);
+		set_report(remote_handle, buf, sizeof(buf));
+		set_report(remote_handle, buf, 3);
 	}
 }
 
 __declspec(dllexport) void appleir_set_led(appleir_device_handle device, int mode)
 {
-	libusb_device_handle *handle = device;
+	remote_handle = device;
 
 	unsigned char buf[5];
 	
@@ -65,53 +65,53 @@ __declspec(dllexport) void appleir_set_led(appleir_device_handle device, int mod
 	switch (mode)
 	{
 		case LEDMODE_OFF: // no light
-			set_report(handle, buf, sizeof(buf));
+			set_report(remote_handle, buf, sizeof(buf));
 			buf[1] = 3;
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, 3);
 			buf[1] = 4;
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, 3);
 			break;
 
 		case LEDMODE_AMBER: // solid light
-			set_report(handle, buf, sizeof(buf));
+			set_report(remote_handle, buf, sizeof(buf));
 			buf[1] = 3; buf[2] = 1;
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, 3);
 			buf[1] = 4; buf[2] = 0;
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, 3);
 			break;
 
 		case LEDMODE_AMBER_BLINK: // blinking amber light
-			set_report(handle, buf, sizeof(buf));
+			set_report(remote_handle, buf, sizeof(buf));
 			buf[1] = 3;
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, 3);
 			buf[1] = 4;
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, 3);
 			buf[1] = 3; buf[2] = 2;
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, 3);
 			break;
 
 		case LEDMODE_WHITE:
-			set_report(handle, buf, sizeof(buf));
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, sizeof(buf));
+			set_report(remote_handle, buf, 3);
 			buf[1] = 4; buf[2] = 1;
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, 3);
 			break;
 
 		case LEDMODE_WHITE_BLINK:
-			set_report(handle, buf, sizeof(buf));
+			set_report(remote_handle, buf, sizeof(buf));
 			buf[1] = 3;
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, 3);
 			buf[1] = 4;
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, 3);
 			buf[1] = 4; buf[2] = 2;
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, 3);
 			break;
 
 		case LEDMODE_BOTH:
 			buf[1] = 7;
-			set_report(handle, buf, sizeof(buf));
+			set_report(remote_handle, buf, sizeof(buf));
 			buf[1] = 6; buf[2] = 1;
-			set_report(handle, buf, 3);
+			set_report(remote_handle, buf, 3);
 			break;
 
 		default:

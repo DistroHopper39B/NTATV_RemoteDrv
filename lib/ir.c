@@ -7,8 +7,6 @@
 #include "appleir.h"
 
 bool cache_flushed = false;
-bool debug = false;
-
 static
 void dumphex(uint8_t *buf, int len)
 {
@@ -178,71 +176,11 @@ void process_signal_ven6b(void *signal, int len)
 	handle_button_ven6b(button);
 }
 
-/**
- * appleir_open(appleir_device_handle)
- * @param device A pointer to the handle
- * @return Whether or not the IR receiver was initialized successfully.
- */
-
-__declspec(dllexport) appleir_device_handle appleir_open(void)
-{
-	int status;
-
-	libusb_device_handle *remote_handle = NULL;
-
-	status = libusb_init(NULL);
-	if (status < 0)
-	{
-		error("LibUSB failed to start: %s (%d)\n", libusb_strerror(status), status);
-		return NULL;
-	}
-
-	// Check to see if the IR receiver exists
-	remote_handle = libusb_open_device_with_vid_pid(NULL,
-													VENDOR_APPLE,
-													PRODUCT_APPLETV_REMOTE);
-	if (!remote_handle)
-	{
-		error("No IR receiver found!\n");
-		return NULL;
-	}
-
-	status = libusb_claim_interface(remote_handle, 0);
-	if (status)
-	{
-		error("Cannot claim interface 0: %s (%d)\n", libusb_strerror(status), status);
-		return NULL;
-	}
-
-	status = libusb_claim_interface(remote_handle, 1);
-	if (status)
-	{
-		error("Cannot claim interface 1: %s (%d)\n", libusb_strerror(status), status);
-		return NULL;
-	}
-
-	return remote_handle;
-}
-
-__declspec(dllexport) void appleir_close(appleir_device_handle device)
-{
-	libusb_device_handle *remote_handle = device;
-
-	if (remote_handle)
-	{
-		libusb_release_interface(remote_handle, 0);
-		libusb_release_interface(remote_handle, 1);
-		libusb_close(remote_handle);
-	}
-
-	libusb_exit(NULL);
-}
-
 static
 void flush_cache(appleir_device_handle device)
 {
 	int status;
-	libusb_device_handle *remote_handle = device;
+	remote_handle = device;
 	ir_command dummy;
 
 	if (!device)
@@ -265,7 +203,7 @@ static
 bool get_raw_data(appleir_device_handle device, ir_command *command)
 {
 	int status, length;
-	libusb_device_handle *remote_handle = device;
+	remote_handle = device;
 
 	if (!cache_flushed)
 		flush_cache(device);
@@ -404,9 +342,4 @@ __declspec(dllexport) _Noreturn DWORD __stdcall appleir_remote_loop(appleir_devi
 			key_down = false;
 		}
 	}
-}
-
-__declspec(dllexport) void appleir_debug(bool set)
-{
-	debug = set;
 }

@@ -11,12 +11,9 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <getopt.h>
-#include <sys/time.h>
-
 #include <windows.h>
 
-
-#include "remote.h"
+#include <appleirapi.h>
 
 #ifdef __linux__
 #printf "This program is designed for Windows. Please use atvclient on Linux."
@@ -27,7 +24,11 @@
 #define VERSION_MINOR 0
 #define VERSION_PATCH 1
 
-// defaults on startup
+typedef enum
+{
+	success = 0,
+	no_remote,
+} error_codes;
 
 static const char *led_modes_str[LEDMODE_MAX] =
 {

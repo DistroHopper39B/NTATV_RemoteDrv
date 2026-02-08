@@ -109,9 +109,9 @@ typedef enum
 
 typedef struct
 {
-	volatile remote_button 	button; // Intermediate button format
-	volatile uint8_t     	modifiers; // Modifiers
-	volatile uint8_t 		key_code; // Virtual key_code code for SendKey
+	volatile remote_button  button; // Intermediate button format
+	volatile unsigned char 	modifiers; // Modifiers
+	volatile unsigned char	key_code; // Virtual key_code code for SendKey
 	volatile const char*	name;
 } key_map;
 

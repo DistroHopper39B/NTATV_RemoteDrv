@@ -31,8 +31,6 @@ extern bool debug;
 extern bool initialized;
 extern libusb_device_handle *remote_handle;
 
-
-
 typedef libusb_device_handle *appleir_device_handle;
 #define error(fmt, ...) fprintf(stderr, "(%s:%d) ", __FILE__, __LINE__); \
 						fprintf(stderr, fmt, ##__VA_ARGS__)

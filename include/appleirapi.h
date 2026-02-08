@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 typedef enum
 {
 	LEDMODE_OFF,
@@ -137,18 +139,12 @@ typedef enum
 typedef struct
 {
 	volatile remote_button  button; // Intermediate button format
-	volatile uint8_t     	modifiers; // Modifiers
-	volatile uint8_t 		key_code; // Virtual key_code code for SendKey
+	volatile unsigned char 	modifiers; // Modifiers
+	volatile unsigned char	key_code; // Virtual key_code code for SendKey
 	volatile const char*	name;
 } key_map;
 // Public handle type for IR handle.
 typedef void *appleir_device_handle;
-
-typedef enum
-{
-	success = 0,
-	no_remote,
-} error_codes;
 
 // These will be exported in the DLL.
 appleir_device_handle appleir_open(void);

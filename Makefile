@@ -5,7 +5,7 @@
 CC = i686-w64-mingw32-gcc
 CFLAGS := -Wall -I$(realpath ./include)
 
-SUBDIRS := lib/ cli/ gui/
+SUBDIRS := lib/ cli/
 
 export CC
 export CFLAGS

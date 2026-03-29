@@ -17,6 +17,7 @@ void dumphex(uint8_t *buf, int len)
 
 	printf("\n");
 }
+/*
 
 static
 void handle_button_venfe(uint16_t button)
@@ -176,6 +177,8 @@ void process_signal_ven6b(void *signal, int len)
 	handle_button_ven6b(button);
 }
 
+*/
+
 static
 void flush_cache(appleir_device_handle device)
 {
@@ -216,12 +219,6 @@ bool get_raw_data(appleir_device_handle device, ir_command *command)
 										   200);
 
 	return (status == LIBUSB_SUCCESS ? true : false);
-}
-
-static
-int appleir_cmdcmp(ir_command *cmd1, ir_command *cmd2)
-{
-	return memcmp(cmd1, cmd2, sizeof(ir_command));
 }
 
 static remote_event get_event_apple(ir_command_vendor_apple *command)

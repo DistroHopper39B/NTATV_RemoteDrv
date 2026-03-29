@@ -1,11 +1,11 @@
-TARGET = remote.exe
-OBJECTS = remote.o
+TARGET = atvclient.exe
+OBJECTS = atvclient.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -Wl,-subsystem,windows -L$(TOP)/lib -lappleir -o $@
+	$(CC) $(OBJECTS) -L$(TOP)/lib -Wl,-subsystem,windows -lappleir -o $@
 
 all: $(TARGET)
 

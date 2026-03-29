@@ -26,15 +26,6 @@ typedef enum
 	LED_BRIGHTNESS_MAX
 } led_brightnesses;
 
-typedef struct
-{
-	unsigned char flags;
-	unsigned char vendor;
-	unsigned char dat02;
-	unsigned char dat03;
-	unsigned char dat04;
-} ir_command;
-
 /**
  * Specify every conceivable button that could be on a remote.
  * As more remotes are supported, this enum will grow.

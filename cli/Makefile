@@ -5,7 +5,7 @@ OBJECTS = remote.o
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -L../lib -lappleir -o $@
+	$(CC) $(OBJECTS) -Wl,-subsystem,windows -L$(TOP)/lib -lappleir -o $@
 
 all: $(TARGET)
 

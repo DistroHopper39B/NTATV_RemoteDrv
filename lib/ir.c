@@ -213,7 +213,7 @@ bool get_raw_data(appleir_device_handle device, ir_command *command)
 										   (uint8_t *) command,
 										   sizeof(*command),
 										   &length,
-										   100);
+										   200);
 
 	return (status == LIBUSB_SUCCESS ? true : false);
 }
@@ -299,7 +299,7 @@ remote_button get_button(ir_command *command)
 __declspec(dllexport) _Noreturn DWORD __stdcall appleir_remote_loop(appleir_device_handle device)
 {
 	bool key_down = false;
-	internal_irctx irctx;
+	internal_irctx irctx = {0};
 
 	while (1)
 	{
@@ -310,19 +310,21 @@ __declspec(dllexport) _Noreturn DWORD __stdcall appleir_remote_loop(appleir_devi
 				printf("Raw signal: ");
 				dumphex((uint8_t *) &irctx.command, sizeof(irctx.command));
 			}
-			// Handle very quick button switches
-			if (key_down == true)
-			{
-				if (appleir_cmdcmp(&irctx.command, &irctx.previous_command) != 0)
-					release_key();
-			}
 
 			irctx.event = get_event(&irctx.command);
 			if (irctx.event == REMOTE_EVENT_BUTTONPRESS)
 			{
 				irctx.button = get_button(&irctx.command);
+
+				/* Handle very fast button switching */
+				if (key_down == true && irctx.button == irctx.previous_button)
+				{
+					release_key();
+				}
+
 				press_key(irctx.button);
 				key_down = true;
+				irctx.previous_button = irctx.button;
 			}
 			else if (irctx.event == REMOTE_EVENT_PAIR)
 			{
@@ -332,8 +334,6 @@ __declspec(dllexport) _Noreturn DWORD __stdcall appleir_remote_loop(appleir_devi
 			{
 				error("Unknown event from remote!\n");
 			}
-
-
 		}
 		else
 		{

@@ -16,7 +16,7 @@
 #include <appleirapi.h>
 
 #ifdef __linux__
-#printf "This program is designed for Windows. Please use atvclient on Linux."
+#error "This program is designed for Windows. Please use atvclient on Linux."
 #endif
 
 
@@ -79,12 +79,7 @@ static void help(void)
 
 int handle_led_mode(appleir_device_handle device, char *arg)
 {
-	if (strlen(arg) != 1)
-	{
-		return EINVAL;
-	}
-
-	if (!isdigit(arg[0]))
+	if (strlen(arg) != 1 || !isdigit(arg[0]))
 	{
 		return EINVAL;
 	}
@@ -94,6 +89,7 @@ int handle_led_mode(appleir_device_handle device, char *arg)
 	{
 		return EINVAL;
 	}
+
 	appleir_set_led(device, led_mode);
 	return 0;
 }
@@ -127,10 +123,21 @@ int main(int argc, char *argv[])
 	volatile key_map *map			= NULL;
 	int opt;
 
+	/* If we're running on a Command Prompt window, output to that window. */
+	if (AttachConsole(ATTACH_PARENT_PROCESS))
+	{
+		freopen("CONIN$", "rb", stdin);
+		freopen("CONOUT$", "wb", stdout);
+		freopen("CONOUT$", "wb", stderr);
+	}
+
 	device = appleir_open();
 	if (!device)
 	{
-		printf("Cannot find remote!\n");
+		MessageBox(NULL,
+			"Cannot initialize remote driver! Is there another instance of the driver running?",
+			"Apple TV remote driver",
+			MB_ICONERROR | MB_OK);
 		status = no_remote;
 		goto done;
 	}

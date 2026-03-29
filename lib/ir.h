@@ -164,8 +164,8 @@ typedef enum
 typedef struct
 {
 	ir_command command;
-	ir_command previous_command;
 	remote_button button;
+	remote_button previous_button;
 	remote_event event;
 } internal_irctx;
 

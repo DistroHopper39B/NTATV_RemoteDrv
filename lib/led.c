@@ -6,13 +6,31 @@
 
 #include "appleir.h"
 
+typedef enum
+{
+	LEDMODE_OFF,
+	LEDMODE_AMBER,
+	LEDMODE_AMBER_BLINK,
+	LEDMODE_WHITE,
+	LEDMODE_WHITE_BLINK,
+	LEDMODE_BOTH,
+	LEDMODE_MAX
+} led_modes;
+
+typedef enum
+{
+	LED_BRIGHTNESS_LO,
+	LED_BRIGHTNESS_HI,
+	LED_BRIGHTNESS_MAX
+} led_brightnesses;
+
 static int set_report(libusb_device_handle *handle, uint8_t *data, int len)
 {
 	unsigned char *type = data;
 	int val;
 
 	val = 0x300 | *type;
-	
+
 	int status = 0;
 
 	status = libusb_control_transfer(handle,
@@ -32,33 +50,47 @@ static int set_report(libusb_device_handle *handle, uint8_t *data, int len)
 	return (status != len);
 }
 
-__declspec(dllexport) void appleir_set_led_brightness(appleir_device_handle device, int high)
+EXPORT bool appleir_set_led_brightness(appleir_device_handle device, int high)
 {
 	remote_handle = device;
 
 	unsigned char buf[5];
+
+	if (high != LED_BRIGHTNESS_HI
+		&& high != LED_BRIGHTNESS_LO)
+	{
+		return false;
+	}
 
 	memset(buf, 0, sizeof(buf));
 	buf[0] = 0xd;
 
-	if (high) {
+	if (high)
+	{
 		buf[1] = 6;
 		set_report(remote_handle, buf, sizeof(buf));
 		buf[1] = 5; buf[2] = 1;
 		set_report(remote_handle, buf, 3);
-	} else {
+	}
+	else
+	{
 		buf[1] = 5;
 		set_report(remote_handle, buf, sizeof(buf));
 		set_report(remote_handle, buf, 3);
 	}
+
+	return true;
 }
 
-__declspec(dllexport) void appleir_set_led(appleir_device_handle device, int mode)
+EXPORT bool appleir_set_led(appleir_device_handle device, int mode)
 {
 	remote_handle = device;
 
 	unsigned char buf[5];
-	
+
+	if (mode < LEDMODE_OFF || mode > LEDMODE_MAX)
+		return false;
+
 	memset(buf, 0, sizeof(buf));
 	buf[0] = 0xd; buf[1] = mode;
 
@@ -118,4 +150,6 @@ __declspec(dllexport) void appleir_set_led(appleir_device_handle device, int mod
 			// Do nothing
 			break;
 	}
+
+	return true;
 }

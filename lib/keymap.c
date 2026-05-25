@@ -122,7 +122,8 @@ bool press_key(remote_button button)
 
 	pressed_key = map[button];
 
-	printf("Executing action: %s\n", pressed_key.name);
+	if (debug)
+		printf("Executing action: %s\n", pressed_key.name);
 
 	if (pressed_key.key_code == 0)
 	{
@@ -229,7 +230,7 @@ bool release_key(void)
 	return TRUE;
 }
 
-__declspec(dllexport) volatile key_map *appleir_get_keymap(void)
+volatile key_map *appleir_get_keymap(void)
 {
 	if (!map_initialized)
 	{

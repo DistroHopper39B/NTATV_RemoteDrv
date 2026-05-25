@@ -6,7 +6,11 @@
 
 #include "appleir.h"
 
+#define APPLE_REMOTE_ENDPOINT 0x2
+
 bool cache_flushed = false;
+
+/*
 static
 void dumphex(uint8_t *buf, int len)
 {
@@ -17,7 +21,6 @@ void dumphex(uint8_t *buf, int len)
 
 	printf("\n");
 }
-/*
 
 static
 void handle_button_venfe(uint16_t button)
@@ -179,48 +182,7 @@ void process_signal_ven6b(void *signal, int len)
 
 */
 
-static
-void flush_cache(appleir_device_handle device)
-{
-	int status;
-	remote_handle = device;
-	ir_command dummy;
-
-	if (!device)
-		return;
-
-	do
-	{
-		status = libusb_interrupt_transfer(remote_handle,
-										   LIBUSB_ENDPOINT_IN | APPLE_REMOTE_ENDPOINT,
-										   (uint8_t *) &dummy,
-										   sizeof(dummy),
-										   NULL,
-										   10);
-	} while (status == LIBUSB_SUCCESS);
-
-	cache_flushed = true;
-}
-
-static
-bool get_raw_data(appleir_device_handle device, ir_command *command)
-{
-	int status, length;
-	remote_handle = device;
-
-	if (!cache_flushed)
-		flush_cache(device);
-
-	status = libusb_interrupt_transfer(remote_handle,
-										   LIBUSB_ENDPOINT_IN | APPLE_REMOTE_ENDPOINT,
-										   (uint8_t *) command,
-										   sizeof(*command),
-										   &length,
-										   200);
-
-	return (status == LIBUSB_SUCCESS ? true : false);
-}
-
+#if 0
 static remote_event get_event_apple(ir_command_vendor_apple *command)
 {
 	switch (command->event)
@@ -293,14 +255,14 @@ remote_button get_button(ir_command *command)
 	}
 }
 
-__declspec(dllexport) _Noreturn DWORD __stdcall appleir_remote_loop(appleir_device_handle device)
+EXPORT _Noreturn DWORD __stdcall appleir_remote_loop(appleir_device_handle device)
 {
 	bool key_down = false;
 	internal_irctx irctx = {0};
 
 	while (1)
 	{
-		if (get_raw_data(device, &irctx.command))
+		if (appleir_get_raw_data(device, &irctx.command))
 		{
 			if (debug)
 			{
@@ -339,4 +301,46 @@ __declspec(dllexport) _Noreturn DWORD __stdcall appleir_remote_loop(appleir_devi
 			key_down = false;
 		}
 	}
+}
+#endif
+
+static
+void flush_cache(appleir_device_handle device)
+{
+    int status;
+    remote_handle = device;
+    ir_command dummy;
+
+    if (!device)
+        return;
+
+    do
+    {
+        status = libusb_interrupt_transfer(remote_handle,
+                                           LIBUSB_ENDPOINT_IN | APPLE_REMOTE_ENDPOINT,
+                                           (uint8_t *) &dummy,
+                                           sizeof(dummy),
+                                           NULL,
+                                           10);
+    } while (status == LIBUSB_SUCCESS);
+
+    cache_flushed = true;
+}
+
+EXPORT bool appleir_get_raw_data(appleir_device_handle device, ir_command *command)
+{
+    int status, length;
+    remote_handle = device;
+
+    if (!cache_flushed)
+        flush_cache(device);
+
+    status = libusb_interrupt_transfer(remote_handle,
+                                       LIBUSB_ENDPOINT_IN | APPLE_REMOTE_ENDPOINT,
+                                       (uint8_t *) command,
+                                       sizeof(*command),
+                                       &length,
+                                       100);
+
+    return status == LIBUSB_SUCCESS ? true : false;
 }

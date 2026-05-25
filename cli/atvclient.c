@@ -5,12 +5,26 @@
  * SPDX-License-Identifier: GPL-2.0-only
  */
 
+/**
+ * When 'atvclient' is run with no arguments, it will display the remote buttoms.
+ *
+ * Command line arguments:
+ * -m, --led-mode			Change the LED mode. Valid modes:
+ *								0: Off
+ *								1: Amber
+ *								2: Amber (blinking)
+ *								3: White (note: many Apple TVs do not have a white LED)
+ *								4: White (blinking)
+ *								5: Both blinking
+ *
+ * -b, --led-brightness		Change LED brightness (0 = dim, 1 = bright)
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <unistd.h>
 #include <getopt.h>
 #include <windows.h>
 
@@ -20,204 +34,217 @@
 #error "This program is designed for Windows. Please use atvclient on Linux."
 #endif
 
-
-#define VERSION_MAJOR 0
-#define VERSION_MINOR 0
-#define VERSION_PATCH 1
-
-typedef enum
+static
+void dumphex(uint8_t *buf, int len)
 {
-	success = 0,
-	no_remote,
-} error_codes;
+    for (int i = 0; i < len; i++)
+    {
+        printf("%02x ", buf[i]);
+    }
 
-static const char *led_modes_str[LEDMODE_MAX] =
-{
-	"Off",
-	"Amber",
-	"Amber (blinking) (default)",
-	"White",
-	"White (blinking)",
-	"Both blinking",
-};
-
-static const struct option long_options[] = 
-{
-	{"help", no_argument, NULL, 'h'},
-	{"version", no_argument, NULL, 'v'},
-	{"debug", no_argument, NULL, 'd'},
-	{"led-mode", required_argument, NULL, 'm'},
-	{"led-brightness", required_argument, NULL, 'b'}
-};
-
-static void version(void)
-{
-	printf("Apple TV Remote Driver for Windows NT version %d.%d.%d\n",
-		VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
-	printf("This program is part of NTATV (https://github.com/DistroHopper39B/NTATV)\n");
+    printf("\n");
 }
 
-static void help(void)
+const char program_name[] = "Apple TV Client";
+char message_buf[200] = {0};
+
+static const struct option long_options[] =
 {
-	version();
+		{"help", no_argument, NULL, 'h'},
+		{"version", no_argument, NULL, 'v'},
+		{"led-mode", required_argument, NULL, 'm'},
+		{"led-brightness", required_argument, NULL, 'b'}
+};
+
+static
+void version(void)
+{
+	printf(VERSION_STRING "\n");
+}
+
+static
+void usage(char *name)
+{
+	printf("Usage: %s [OPTION]\n", name);
+	printf("When this program is run with no arguments, it will display the buttons pressed on the remote.\n");
 	printf("\n");
-	
-	printf("The following options are available:\n");
-	printf("-h, --help \t\tShow this help screen.\n");
-	printf("-v, --version \t\tShow version number.\n");
-	printf("-d, --debug \t\tEnable verbose output.\n");
-	printf("-m, --led-mode \t\tChange the front LED's mode of operation.\n");
-	printf("Supported LED modes:\n");
-	for (int i = 0; i < LEDMODE_MAX; i++)
-	{
-		printf("    %i: %s\n", i, led_modes_str[i]);
-	}
-	printf("-b, --led-brightness \tChange the brightness of the front LED.\n");
-	printf("Supported LED brightnesses:\n");
-	printf("    0: Dim\n");
-	printf("    1: Bright (default)\n");
+
+	printf("Command line arguments:\n");
+	printf("  -m, --led-mode\tChange the LED mode. Valid modes:\n");
+	printf("\t\t\t  0: Off\n");
+	printf("\t\t\t  1: Amber\n");
+	printf("\t\t\t  2: Amber (blinking) (default)\n");
+	printf("\t\t\t  3: White (many TVs do not have white LEDs)\n");
+	printf("\t\t\t  4: White (blinking)\n");
+	printf("\t\t\t  5: Both blinking\n");
+
+	printf("  -b, --led-brightness\tToggle between bright (1) and dim (0) brightness\n");
+	printf("  -d, --debug\t\tEnable debug output\n");
+	printf("  -h, --help\t\tShow this help screen and exit\n");
+	printf("  -v, --version\t\tShow the program version and exit\n");
 }
 
-int handle_led_mode(appleir_device_handle device, char *arg)
+int msgbox_error(const char *message, const char *title)
 {
-	if (strlen(arg) != 1 || !isdigit(arg[0]))
+	return MessageBox(NULL, message, title, MB_ICONERROR | MB_OK);
+}
+
+int message_boxf(HWND hwnd, uint32_t type, const char *title, char *message, ...)
+{
+	va_list list;
+
+	va_start(list, message);
+	vsnprintf(message_buf, 200, message, list);
+	va_end(list);
+
+	return MessageBox(hwnd, message_buf, title, type);
+}
+
+static
+int atvclient_open_device(appleir_device_handle *device)
+{
+	int status = success;
+
+	status = appleir_open(device,
+						  VERSION_MAJOR,
+						  VERSION_MINOR,
+						  VERSION_PATCH);
+	if (status == version_mismatch)
 	{
-		return EINVAL;
+		if (message_boxf(NULL,
+						 MB_ICONWARNING | MB_YESNO,
+						 program_name,
+						 "DLL version does not match EXE version.\n"
+						 "This may result in undefined behavior. Run anyway?") == IDYES)
+		{
+			status = appleir_open(device,
+								  VERSION_MAJOR,
+								  VERSION_MINOR,
+								  VERSION_PATCH);
+		}
+		else
+		{
+			return status;
+		}
 	}
+
+	if (status)
+	{
+		message_boxf(NULL,
+					 MB_ICONERROR | MB_OK,
+					 program_name,
+					 "Cannot open remote: Error %d (%s)",
+					 status, appleir_strerror(status));
+		return status;
+	}
+
+	return success;
+}
+
+static
+bool atvclient_set_led_mode(char *arg)
+{
+	bool success = false;
+
+    appleir_device_handle device = NULL;
+
+	if (strlen(arg) != 1 || !isdigit(arg[0]))
+		return false;
+
+	if (atvclient_open_device(&device))
+		return false;
 
 	int led_mode = strtol(arg, NULL, 0);
-	if (led_mode < LEDMODE_OFF || led_mode > LEDMODE_BOTH)
-	{
-		return EINVAL;
-	}
 
-	appleir_set_led(device, led_mode);
-	return 0;
+	success = appleir_set_led(device, led_mode);
+	if (success) appleir_close(device);
+	return success;
 }
 
-int handle_led_brightness(appleir_device_handle device, char *arg)
+static
+bool atvclient_set_led_brightness(char *arg)
 {
-	if (strlen(arg) != 1)
-	{
-		return EINVAL;
-	}
+	bool success = false;
 
-	if (!isdigit(arg[0]))
-	{
-		return EINVAL;
-	}
+    appleir_device_handle device = NULL;
+
+	if (strlen(arg) != 1 || !isdigit(arg[0]))
+		return false;
+
+	if (atvclient_open_device(&device))
+		return false;
 
 	int led_brightness = strtol(arg, NULL, 0);
-	if (led_brightness != LED_BRIGHTNESS_HI
-		&& led_brightness != LED_BRIGHTNESS_LO)
-	{
-		return EINVAL;
-	}
-	appleir_set_led_brightness(device, led_brightness);
-	return 0;
+
+	success = appleir_set_led_brightness(device, led_brightness);
+	if (success) appleir_close(device);
+	return success;
 }
 
 int main(int argc, char *argv[])
 {
-	int status 						= success;
 	appleir_device_handle device	= NULL;
-	volatile key_map *map			= NULL;
 	int opt;
+    ir_command command;
 
-	/* If we're running on a Command Prompt window, output to that window. */
-	if (AttachConsole(ATTACH_PARENT_PROCESS))
+	opt = getopt_long(argc, argv, "dhvm:b:", long_options, NULL);
+	switch (opt)
 	{
-		freopen("CONIN$", "rb", stdin);
-		freopen("CONOUT$", "wb", stdout);
-		freopen("CONOUT$", "wb", stderr);
-	}
+		case 'd':
+			appleir_debug(true);
+			break;
 
-	device = appleir_open();
-	if (!device)
-	{
-		MessageBox(NULL,
-			"Cannot initialize remote driver! Is there another instance of the driver running?",
-			"Apple TV remote driver",
-			MB_ICONERROR | MB_OK);
-		status = no_remote;
-		goto done;
-	}
+		case 'h':
+			version();
+			usage(argv[0]);
+			return success;
 
-	while ((opt = getopt_long(argc, argv, "hvdm:b:", long_options, NULL)) != -1)
-	{
-		switch (opt)
-		{
-			// we do this one first to ensure debug output ASAP
-			case 'd':
-				appleir_debug(true);
-				break;
-			case 'h':
-				help();
-				return 0;
-			case 'v':
+		case 'v':
+			version();
+			return success;
+
+		case 'm':
+			if (!atvclient_set_led_mode(optarg))
 			{
-				version();
-				return 0;
+				message_boxf(NULL,
+							 MB_ICONERROR | MB_OK,
+							 program_name,
+							 "Invalid LED mode!");
+				return -1;
 			}
-			case 'm':
-				status = handle_led_mode(device, optarg);
-				if (status != 0)
-				{
-					printf("Failed to set LED mode: Errno %d (%s)\n", status, strerror(status));
-				}
-				return status;
 
-			case 'b':
-			{				
-				status = handle_led_brightness(device, optarg);
-				{
-					if (status != 0)
-					{
-						printf("Failed to set LED brightness: Errno %d (%s)\n", status, strerror(status));
-					}
-					return status;
-				}
+			return success;
+
+		case 'b':
+			if (!atvclient_set_led_brightness(optarg))
+			{
+                message_boxf(NULL,
+                             MB_ICONERROR | MB_OK,
+                             program_name,
+                             "LED brightness setting must be 0 or 1!");
+				return -1;
 			}
-			default:
-				help();
-				exit(1);
-		}
-	}
-	
-	version();
 
-	map = appleir_get_keymap();
+			return success;
 
-	// TODO: This is where we're gonna get config from the registry. for now we hardcode
-	map[REMOTE_BUTTON_APPLE_MENU].modifiers 		= 0;
-	map[REMOTE_BUTTON_APPLE_MENU].key_code 			= VK_LWIN;
-	map[REMOTE_BUTTON_APPLE_PLAY_PAUSE].modifiers	= 0;
-	map[REMOTE_BUTTON_APPLE_PLAY_PAUSE].key_code	= VK_RETURN;
-	map[REMOTE_BUTTON_APPLE_FAST_FWD].modifiers 	= 0;
-	map[REMOTE_BUTTON_APPLE_FAST_FWD].key_code		= VK_RIGHT;
-	map[REMOTE_BUTTON_APPLE_REWIND].modifiers		= 0;
-	map[REMOTE_BUTTON_APPLE_REWIND].key_code		= VK_LEFT;
-	map[REMOTE_BUTTON_APPLE_VOLUME_UP].modifiers	= 0;
-	map[REMOTE_BUTTON_APPLE_VOLUME_UP].key_code		= VK_UP,
-	map[REMOTE_BUTTON_APPLE_VOLUME_DOWN].modifiers	= 0;
-	map[REMOTE_BUTTON_APPLE_VOLUME_DOWN].key_code	= VK_DOWN;
+		case '?':
+			usage(argv[0]);
+			return -1;
 
-	printf("\nEntering remote test mode...\n");
-	printf("Press a button on your Apple remote to see the status or press Control-C to quit.\n");
-
-	HANDLE thread = CreateThread(NULL, 0, appleir_remote_loop, device, 0, NULL);
-	while (thread)
-	{
-		for (int i = 0; i < LEDMODE_MAX; i++)
-		{
-			printf("Setting LED to mode %d...\n", i);
-			appleir_set_led(device, i);
-			sleep(5);
-		}
+		default:
+			break;
 	}
 
-done:
-	appleir_close(device);
-	
-	return status;
+	if (atvclient_open_device(&device))
+		return -1;
+
+    while (1)
+    {
+        if (appleir_get_raw_data(device, &command))
+        {
+            dumphex((uint8_t *) &command, 5);
+        }
+    }
+
+	return success;
 }

@@ -169,6 +169,4 @@ typedef struct
 	remote_event event;
 } internal_irctx;
 
-#define APPLE_REMOTE_ENDPOINT 0x2
-
 bool process_signal(void *signal, int len);

@@ -7,25 +7,58 @@
 #include "appleir.h"
 
 bool debug = false;
-bool initialized = false;
 libusb_device_handle *remote_handle = NULL;
+bool run_anyway = false;
+
+static const char *appleir_error_str[] = {
+	"Success",
+	"LibUSB start failure",
+	"Device initialization failure",
+	"DLL and EXE version mismatch",
+	"Unknown Error"
+};
+
+EXPORT const char *appleir_strerror(int error)
+{
+	if (error > appleir_error_max || error < success)
+		return appleir_error_str[appleir_error_max];
+
+	return appleir_error_str[error];
+}
 
 /**
  * appleir_open(appleir_device_handle)
  * @return The device handle, or NULL if the device is not open.
  */
-__declspec(dllexport) appleir_device_handle appleir_open(void)
+EXPORT int appleir_open(appleir_device_handle *device,
+						uint8_t vMaj,
+						uint8_t vMin,
+						uint8_t vPatch)
 {
 	int status;
 
-	if (initialized) // New instance
-		return remote_handle;
+	if (run_anyway == false
+        && vMaj != VERSION_MAJOR
+        && vMin != VERSION_MINOR
+        && vPatch != VERSION_PATCH)
+	{
+        /* We have to open() twice if the version is mismatched. */
+		*device = NULL;
+        run_anyway = true;
+		return version_mismatch;
+	}
+
+	if (remote_handle)
+	{
+		*device = remote_handle;
+		return success;
+	}
 
 	status = libusb_init(NULL);
 	if (status < 0)
 	{
-		error("LibUSB failed to start: %s (%d)\n", libusb_strerror(status), status);
-		return NULL;
+		*device = NULL;
+		return libusb_start_fail;
 	}
 
 	// Check to see if the IR receiver exists
@@ -34,34 +67,33 @@ __declspec(dllexport) appleir_device_handle appleir_open(void)
 													PRODUCT_APPLETV_REMOTE);
 	if (!remote_handle)
 	{
-		error("No IR receiver found!\n");
-		return NULL;
+		*device = NULL;
+		return device_init_fail;
 	}
 
 	status = libusb_claim_interface(remote_handle, 0);
 	if (status)
 	{
-		error("Cannot claim interface 0: %s (%d)\n", libusb_strerror(status), status);
-		return NULL;
+		*device = NULL;
+		return device_init_fail;
 	}
 
 	status = libusb_claim_interface(remote_handle, 1);
 	if (status)
 	{
-		error("Cannot claim interface 1: %s (%d)\n", libusb_strerror(status), status);
-		return NULL;
+		*device = NULL;
+		return device_init_fail;
 	}
 
-	initialized = true;
-
-	return remote_handle;
+	*device = remote_handle;
+	return success;
 }
 
 /**
  * appleir_close(appleir_device_handle)
  * @param device The device to close.
  */
-__declspec(dllexport) void appleir_close(appleir_device_handle device)
+EXPORT void appleir_close(appleir_device_handle device)
 {
 	remote_handle = device;
 
@@ -75,7 +107,7 @@ __declspec(dllexport) void appleir_close(appleir_device_handle device)
 	libusb_exit(NULL);
 }
 
-__declspec(dllexport) void appleir_debug(bool set)
+EXPORT void appleir_debug(bool set)
 {
 	debug = set;
 }

@@ -1,10 +1,12 @@
-/* Apple TV Remote Driver for Windows XP
+/*
+ * Apple TV Remote Driver for Windows XP
  * Copyright (C) Sylas Hollander. All Rights Reserved.
  * Based on atvclient by Christoph Cantillon and Peter Korsgaard
  * SPDX-License-Identifier: GPL-2.0-only
  */
 
-#include "appleir.h"
+#include "atvclient.h"
+#include "ir.h"
 
 bool map_initialized = false;
 volatile key_map map[REMOTE_BUTTON_MAX];
@@ -103,32 +105,32 @@ static const char *remote_button_name[REMOTE_BUTTON_MAX] =
 		"White",
 };
 
-bool press_key(remote_button button)
+bool atvclient_press_key(remote_button button)
 {
 	int inputs_count = 0;
 	INPUT inputs[5];
 
 	if (!map_initialized)
 	{
-		error("Keymap not initialized\n");
-		return FALSE;
+		fprintf(stderr, "Keymap not initialized\n");
+		return false;
 	}
 
 	if (button >= REMOTE_BUTTON_MAX)
 	{
-		error("Button %d too high\n", button);
-		return FALSE;
+		fprintf(stderr, "Button %d too high\n", button);
+		return false;
 	}
 
 	pressed_key = map[button];
 
-	if (debug)
+	if (client_debug)
 		printf("Executing action: %s\n", pressed_key.name);
 
 	if (pressed_key.key_code == 0)
 	{
-		error("Button %d does not correspond with key code\n", button);
-		return FALSE;
+		fprintf(stderr, "Button %d does not correspond with key code\n", button);
+		return false;
 	}
 
 	// Key down for modifiers
@@ -175,10 +177,10 @@ bool press_key(remote_button button)
 	inputs_count++;
 
 	SendInput(inputs_count, inputs, sizeof(INPUT));
-	return TRUE;
+	return true;
 }
 
-bool release_key(void)
+bool atvclient_release_key(void)
 {
 	int inputs_count = 0;
 	INPUT inputs[5];
@@ -227,10 +229,10 @@ bool release_key(void)
 	}
 
 	SendInput(inputs_count, inputs, sizeof(INPUT));
-	return TRUE;
+	return true;
 }
 
-volatile key_map *appleir_get_keymap(void)
+volatile key_map *atvclient_init_keymap(void)
 {
 	if (!map_initialized)
 	{

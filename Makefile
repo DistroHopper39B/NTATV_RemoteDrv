@@ -11,7 +11,7 @@ OBJCOPY = i686-w64-mingw32-objcopy
 
 ROOTDIR = $(PWD)
 
-SUBDIRS := lib/ cli/
+SUBDIRS := lib/ app/
 
 export TOP
 export CC

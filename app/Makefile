@@ -2,7 +2,7 @@
 
 TARGET = atvclient.exe
 TARGET_WIN = atvclientw.exe
-OBJECTS = atvclient.o
+OBJECTS = atvclient.o led.o ir.o keymap.o
 
 all: $(TARGET) $(TARGET_WIN)
 

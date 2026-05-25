@@ -17,7 +17,6 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/time.h>
-#include <windows.h>
 
 #include "libusb.h"
 typedef libusb_device_handle *appleir_device_handle;
@@ -25,16 +24,11 @@ typedef libusb_device_handle *appleir_device_handle;
 #define APPLEIR_DLL
 #include <appleirapi.h>
 
-//#include "keymap.h"
-//#include "ir.h"
-
 #define VENDOR_APPLE 0x05ac
 #define PRODUCT_APPLETV_REMOTE 0x8241
 
-#define SHARED __attribute__((section(".shr"), shared))
-
 extern bool debug;
-extern SHARED libusb_device_handle *remote_handle;
+extern libusb_device_handle *remote_handle;
 
 #define error(fmt, ...) fprintf(stderr, "(%s:%d) ", __FILE__, __LINE__); \
 						fprintf(stderr, fmt, ##__VA_ARGS__)

@@ -99,7 +99,7 @@ DWORD __stdcall atvclient_remote_loop(appleir_device_handle device)
 
     while (1)
     {
-        if (appleir_get_raw_data(device, &irctx.command))
+        if (appleir_get_raw_data(device, &irctx.command, key_down))
         {
             if (client_debug)
             {
@@ -136,7 +136,8 @@ DWORD __stdcall atvclient_remote_loop(appleir_device_handle device)
                     break;
                 case REMOTE_EVENT_INVALID:
                 default:
-                    fprintf(stderr, "Unknown event from remote!\n");
+                    fprintf(stderr, "Unknown event from remote!\nEvent: ");
+                    dumphex((uint8_t *) &irctx.command, sizeof(irctx.command));
                     if (key_down == true)
                     {
                         atvclient_release_key();
@@ -150,6 +151,7 @@ DWORD __stdcall atvclient_remote_loop(appleir_device_handle device)
         {
             if (key_down)
                 atvclient_release_key();
+
             key_down = false;
         }
     }

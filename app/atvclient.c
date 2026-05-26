@@ -27,7 +27,8 @@ static const struct option long_options[] =
 static
 void version(void)
 {
-	printf(VERSION_STRING "\n");
+	puts(VERSION_STRING);
+    puts(COPYRIGHT_STRING);
 }
 
 static

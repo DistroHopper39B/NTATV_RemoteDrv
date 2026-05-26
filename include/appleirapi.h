@@ -52,7 +52,7 @@ DLLFUNC int appleir_open(appleir_device_handle *device,
 DLLFUNC void appleir_close(appleir_device_handle device);
 DLLFUNC bool appleir_set_led(appleir_device_handle device, int mode);
 DLLFUNC bool appleir_set_led_brightness(appleir_device_handle device, int high);
-DLLFUNC bool appleir_get_raw_data(appleir_device_handle device, ir_command *command);
+DLLFUNC bool appleir_get_raw_data(appleir_device_handle device, ir_command *command, bool keydown);
 DLLFUNC void appleir_debug(bool set);
 DLLFUNC const char *appleir_strerror(int error);
 

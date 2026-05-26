@@ -8,6 +8,7 @@ BINDIR := $(dir $(realpath bin))
 CC = i686-w64-mingw32-gcc
 CFLAGS := -Wall -fms-extensions -I$(realpath ./include)
 OBJCOPY = i686-w64-mingw32-objcopy
+WINDRES = i686-w64-mingw32-windres
 
 ROOTDIR = $(PWD)
 
@@ -18,6 +19,7 @@ export CC
 export CFLAGS
 export OBJCOPY
 export BINDIR
+export WINDRES
 
 all clean: $(SUBDIRS)
 

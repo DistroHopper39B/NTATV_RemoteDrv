@@ -45,7 +45,6 @@ void usage(char *name)
 	printf("\t\t\t  3: White (many TVs do not have white LEDs)\n");
 	printf("\t\t\t  4: White (blinking)\n");
 	printf("\t\t\t  5: Both blinking\n");
-
 	printf("  -b, --led-brightness\tToggle between bright (1) and dim (0) brightness\n");
 	printf("  -d, --debug\t\tEnable debug output\n");
 	printf("  -h, --help\t\tShow this help screen and exit\n");

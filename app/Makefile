@@ -2,9 +2,12 @@
 
 TARGET = atvclient.exe
 TARGET_WIN = atvclientw.exe
-OBJECTS = atvclient.o led.o ir.o keymap.o
+OBJECTS = atvclient.o led.o ir.o keymap.o meta.o
 
 all: $(TARGET) $(TARGET_WIN)
+
+%.o: meta/%.rc
+	$(WINDRES) -I$(TOP)/include $< -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

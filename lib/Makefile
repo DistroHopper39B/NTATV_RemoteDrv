@@ -1,7 +1,10 @@
 TARGET = appleir.dll
-OBJECTS = appleir.o ir.o led.o # keymap.o
+OBJECTS = appleir.o ir.o led.o meta.o
 
 all: $(TARGET)
+
+%.o: meta/%.rc
+	$(WINDRES) -I$(TOP)/include $< -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -Wl,-subsystem,windows -c $< -o $@

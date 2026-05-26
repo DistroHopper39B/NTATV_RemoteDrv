@@ -46,7 +46,7 @@ EXPORT bool appleir_get_raw_data(appleir_device_handle device, ir_command *comma
                                        (uint8_t *) command,
                                        sizeof(*command),
                                        &length,
-                                       100);
+                                       128);
 
     return status == LIBUSB_SUCCESS ? true : false;
 }

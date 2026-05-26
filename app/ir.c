@@ -127,10 +127,22 @@ DWORD __stdcall atvclient_remote_loop(appleir_device_handle device)
 
                 case REMOTE_EVENT_PAIR:
                     fprintf(stderr, "Remote pairing not implemented!\n");
+                    if (key_down == true)
+                    {
+                        atvclient_release_key();
+                        key_down = false;
+                    }
+
                     break;
                 case REMOTE_EVENT_INVALID:
                 default:
                     fprintf(stderr, "Unknown event from remote!\n");
+                    if (key_down == true)
+                    {
+                        atvclient_release_key();
+                        key_down = false;
+                    }
+
                     break;
             }
         }

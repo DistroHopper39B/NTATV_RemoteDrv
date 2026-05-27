@@ -1,0 +1,32 @@
+/*
+ * Apple TV Remote Driver for Windows XP
+ * Copyright (C) Sylas Hollander. All Rights Reserved.
+ * Based on atvclient by Christoph Cantillon and Peter Korsgaard
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+#include <version.h>
+
+1 VERSIONINFO
+FILEVERSION     VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH,0
+PRODUCTVERSION  VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", AUTHOR_ORG
+      VALUE "FileDescription", PROGRAM_NAME " " PROGRAM_TYPE
+      VALUE "FileVersion", VERSION_NUM_STR
+      VALUE "InternalName", FILE_NAME
+      VALUE "LegalCopyright", COPYRIGHT_STRING
+      VALUE "OriginalFilename", FILE_NAME
+      VALUE "ProductName", PROGRAM_NAME " " PROGRAM_TYPE
+      VALUE "ProductVersion", VERSION_NUM_STR
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END

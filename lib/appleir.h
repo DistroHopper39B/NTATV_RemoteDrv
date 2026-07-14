@@ -29,7 +29,6 @@ typedef libusb_device_handle *appleir_device_handle;
 #define PRODUCT_APPLETV_REMOTE 0x8241
 
 extern bool debug;
-extern libusb_device_handle *remote_handle;
 
 #define error(fmt, ...) fprintf(stderr, "(%s:%d) ", __FILE__, __LINE__); \
 						fprintf(stderr, fmt, ##__VA_ARGS__)

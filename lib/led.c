@@ -53,7 +53,9 @@ static int set_report(libusb_device_handle *handle, uint8_t *data, int len)
 
 EXPORT bool appleir_set_led_brightness(appleir_device_handle device, int high)
 {
-	remote_handle = device;
+	libusb_device_handle *remote_handle = device;
+
+	if (!device) return false;
 
 	unsigned char buf[5];
 
@@ -85,9 +87,10 @@ EXPORT bool appleir_set_led_brightness(appleir_device_handle device, int high)
 
 EXPORT bool appleir_set_led(appleir_device_handle device, int mode)
 {
-	remote_handle = device;
-
+	libusb_device_handle *remote_handle = device;
 	unsigned char buf[5];
+
+	if (!device) return false;
 
 	if (mode < LEDMODE_OFF || mode > LEDMODE_MAX)
 		return false;

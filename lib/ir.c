@@ -15,11 +15,8 @@ static
 void flush_cache(appleir_device_handle device)
 {
     int status;
-    remote_handle = device;
+    libusb_device_handle *remote_handle = device;
     ir_command dummy;
-
-    if (!device)
-        return;
 
     do
     {
@@ -37,7 +34,9 @@ void flush_cache(appleir_device_handle device)
 EXPORT bool appleir_get_raw_data(appleir_device_handle device, ir_command *command, bool keydown)
 {
     int status, length;
-    remote_handle = device;
+    libusb_device_handle *remote_handle = device;
+
+    if (!device) return false;
 
     if (!cache_flushed)
         flush_cache(device);
@@ -49,5 +48,5 @@ EXPORT bool appleir_get_raw_data(appleir_device_handle device, ir_command *comma
                                        &length,
                                        keydown ? 128 : 0);
 
-    return status == LIBUSB_SUCCESS ? true : false;
+    return (status == LIBUSB_SUCCESS);
 }

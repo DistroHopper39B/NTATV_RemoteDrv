@@ -166,6 +166,8 @@ typedef enum
 {
     APPLE_REMOTE_TIMEOUT	= 0x00,
     APPLE_REMOTE_RESVD		= 0x01,
+
+    /* White Apple remote */
     APPLE_REMOTE_MENU1		= 0x02,
     APPLE_REMOTE_MENU2		= 0x03,
     APPLE_REMOTE_PLAY1		= 0x04,
@@ -178,6 +180,10 @@ typedef enum
     APPLE_REMOTE_UP2		= 0x0B,
     APPLE_REMOTE_DOWN1		= 0x0C,
     APPLE_REMOTE_DOWN2		= 0x0D,
+
+    /* Aluminum Apple remote */
+    APPLE_REMOTE_CTRALUM    = 0x5D,
+    APPLE_REMOTE_PLAYALUM   = 0x5E,
 } ir_buttons_vendor_apple;
 
 typedef enum
@@ -268,6 +274,7 @@ typedef enum
 typedef enum
 {
     REMOTE_EVENT_BUTTONPRESS,
+    REMOTE_EVENT_BUTTONPRESS_DUALPACK,
     REMOTE_EVENT_PAIR,
     REMOTE_EVENT_INVALID,
 } remote_event;

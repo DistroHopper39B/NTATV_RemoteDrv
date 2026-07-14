@@ -22,6 +22,7 @@ extern "C" {
 #define DLLFUNC IMPORT
 #endif
 
+#pragma pack(push, 1)
 typedef enum
 {
 	success = 0,
@@ -39,6 +40,7 @@ typedef struct
 	uint8_t dat03;
 	uint8_t dat04;
 } ir_command;
+#pragma pack(pop) 
 
 // Public handle type for IR handle.
 #ifndef APPLEIR_DLL

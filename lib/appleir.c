@@ -8,8 +8,7 @@
 #include "appleir.h"
 
 bool debug = false;
-libusb_device_handle *remote_handle = NULL;
-bool run_anyway = false;
+static bool run_anyway = false;
 
 static const char *appleir_error_str[] = {
 	"Success",
@@ -27,15 +26,12 @@ EXPORT const char *appleir_strerror(int error)
 	return appleir_error_str[error];
 }
 
-/**
- * appleir_open(appleir_device_handle)
- * @return The device handle, or NULL if the device is not open.
- */
 EXPORT int appleir_open(appleir_device_handle *device,
 						uint8_t vMaj,
 						uint8_t vMin,
 						uint8_t vPatch)
 {
+	static libusb_device_handle *remote_handle = NULL;
 	int status;
 
 	if (run_anyway == false
@@ -90,20 +86,14 @@ EXPORT int appleir_open(appleir_device_handle *device,
 	return success;
 }
 
-/**
- * appleir_close(appleir_device_handle)
- * @param device The device to close.
- */
 EXPORT void appleir_close(appleir_device_handle device)
 {
-	remote_handle = device;
+	libusb_device_handle *remote_handle = device;
+	if (!device) return;
 
-	if (remote_handle)
-	{
-		libusb_release_interface(remote_handle, 0);
-		libusb_release_interface(remote_handle, 1);
-		libusb_close(remote_handle);
-	}
+	libusb_release_interface(remote_handle, 0);
+	libusb_release_interface(remote_handle, 1);
+	libusb_close(remote_handle);
 
 	libusb_exit(NULL);
 }

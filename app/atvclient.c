@@ -166,18 +166,20 @@ int main(int argc, char *argv[])
 	map = atvclient_init_keymap();
 
     /* TODO: This is where we're gonna get config from the registry. For now we hardcode */
-    map[REMOTE_BUTTON_APPLE_MENU].modifiers 		= 0;
-    map[REMOTE_BUTTON_APPLE_MENU].key_code 			= VK_LWIN;
-    map[REMOTE_BUTTON_APPLE_PLAY_PAUSE].modifiers	= 0;
-    map[REMOTE_BUTTON_APPLE_PLAY_PAUSE].key_code	= VK_RETURN;
-    map[REMOTE_BUTTON_APPLE_FAST_FWD].modifiers 	= 0;
-    map[REMOTE_BUTTON_APPLE_FAST_FWD].key_code		= VK_RIGHT;
-    map[REMOTE_BUTTON_APPLE_REWIND].modifiers		= 0;
-    map[REMOTE_BUTTON_APPLE_REWIND].key_code		= VK_LEFT;
-    map[REMOTE_BUTTON_APPLE_VOLUME_UP].modifiers	= 0;
-    map[REMOTE_BUTTON_APPLE_VOLUME_UP].key_code		= VK_UP,
-    map[REMOTE_BUTTON_APPLE_VOLUME_DOWN].modifiers	= 0;
-    map[REMOTE_BUTTON_APPLE_VOLUME_DOWN].key_code	= VK_DOWN;
+    map[REMOTE_BUTTON_APPLE_MENU].modifiers 			= 0;
+    map[REMOTE_BUTTON_APPLE_MENU].key_code 				= VK_LWIN;
+    map[REMOTE_BUTTON_APPLE_PLAY_PAUSE].modifiers		= 0;
+    map[REMOTE_BUTTON_APPLE_PLAY_PAUSE].key_code		= VK_RETURN;
+    map[REMOTE_BUTTON_APPLE_FAST_FWD].modifiers 		= 0;
+    map[REMOTE_BUTTON_APPLE_FAST_FWD].key_code			= VK_RIGHT;
+    map[REMOTE_BUTTON_APPLE_REWIND].modifiers			= 0;
+    map[REMOTE_BUTTON_APPLE_REWIND].key_code			= VK_LEFT;
+    map[REMOTE_BUTTON_APPLE_VOLUME_UP].modifiers		= 0;
+    map[REMOTE_BUTTON_APPLE_VOLUME_UP].key_code			= VK_UP,
+    map[REMOTE_BUTTON_APPLE_VOLUME_DOWN].modifiers		= 0;
+    map[REMOTE_BUTTON_APPLE_VOLUME_DOWN].key_code		= VK_DOWN;
+	map[REMOTE_BUTTON_APPLE_ALUMINUM_SELECT].modifiers	= 0;
+	map[REMOTE_BUTTON_APPLE_ALUMINUM_SELECT].key_code	= VK_RETURN;
 
     version();
     printf("\nEntering remote test mode...\n");

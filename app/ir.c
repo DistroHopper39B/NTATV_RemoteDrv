@@ -41,6 +41,10 @@ remote_button get_button_apple(ir_command_vendor_apple *command)
         case APPLE_REMOTE_DOWN1:
         case APPLE_REMOTE_DOWN2:
             return REMOTE_BUTTON_APPLE_VOLUME_DOWN;
+        case APPLE_REMOTE_PLAYALUM:
+            return REMOTE_BUTTON_APPLE_PLAY_PAUSE;
+        case APPLE_REMOTE_CTRALUM:
+            return REMOTE_BUTTON_APPLE_ALUMINUM_SELECT;
         default:
             return REMOTE_BUTTON_INVALID;
     }
@@ -67,6 +71,12 @@ remote_event get_event_apple(ir_command_vendor_apple *command)
     switch (command->event)
     {
         case APPLE_REMOTE_BUTTONPRESS:
+            if (command->event_id == APPLE_REMOTE_CTRALUM
+            || command->event_id == APPLE_REMOTE_PLAYALUM)
+            {
+                return REMOTE_EVENT_BUTTONPRESS_DUALPACK;
+            }
+
             return REMOTE_EVENT_BUTTONPRESS;
         case APPLE_REMOTE_PAIRING:
             return REMOTE_EVENT_PAIR;
@@ -95,6 +105,7 @@ DECLSPEC_NORETURN
 DWORD __stdcall atvclient_remote_loop(appleir_device_handle device)
 {
     bool key_down = false;
+    bool multi_pack = false;
     internal_irctx irctx = {0};
 
     while (1)
@@ -107,10 +118,21 @@ DWORD __stdcall atvclient_remote_loop(appleir_device_handle device)
                 dumphex((uint8_t *) &irctx.command, sizeof(irctx.command));
             }
 
+            /* Only count multi-packets once. */
+            if (multi_pack)
+            {
+                multi_pack = false;
+                continue;
+            }
+
+
             irctx.event = get_event(&irctx.command);
 
             switch (irctx.event)
             {
+                case REMOTE_EVENT_BUTTONPRESS_DUALPACK:
+                    multi_pack = true;
+
                 case REMOTE_EVENT_BUTTONPRESS:
                     irctx.button = get_button(&irctx.command);
 

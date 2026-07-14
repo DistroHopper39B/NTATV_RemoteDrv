@@ -23,7 +23,7 @@
 int atvclient_open_device(appleir_device_handle *device);
 bool atvclient_set_led_mode(char *arg);
 bool atvclient_set_led_brightness(char *arg);
-DECLSPEC_NORETURN DWORD __stdcall atvclient_remote_loop(appleir_device_handle device);
+DWORD __stdcall atvclient_remote_loop(appleir_device_handle device);
 volatile key_map *atvclient_init_keymap(void);
 
 extern bool client_debug;
